@@ -1,0 +1,42 @@
+{
+    "geometry": [
+        {
+            "mesh": "Cube.stl",
+            "transformation": {
+                "translation": [
+                    0.0,
+                    3.3909788131713867,
+                    3.007051467895508
+                ]
+            },
+            "volume_selection": 1,
+            "physics_properties": {
+                "mass": 1.0,
+                "friction": 0.5,
+                "restitution": 0.0,
+                "collision_shape": "CONVEX_HULL"
+            }
+        },
+        {
+            "mesh": "Plane.stl",
+            "transformation": {
+                "translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "volume_selection": 2,
+            "is_obstacle": true,
+            "physics_properties": {
+                "mass": 1.0,
+                "friction": 0.5,
+                "restitution": 0.0,
+                "collision_shape": "CONVEX_HULL"
+            }
+        }
+    ],
+    "contact": {
+        "friction_coefficient": 0.5
+    }
+}
