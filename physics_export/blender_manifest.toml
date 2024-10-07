@@ -1,0 +1,24 @@
+schema_version = "1.0.0"
+
+id = "physics_export"
+version = "1.0.0"
+name = "Physics Export"
+tagline = "Exports objects and physics constraints to JSON"
+maintainer = "Antoine Boucher <your.email@example.com>"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+
+license = [
+  "GPL-3.0-or-later"
+]
+
+website = "https://github.com/ETSTribology/BlenderPluginSimulation"
+tags = ["Object", "Physics", "Export"]
+
+[permissions]
+files = "Required for reading and writing files during export"
+network = "Required for accessing online resources or services"
+
+[build]
+wheels = "./wheels"

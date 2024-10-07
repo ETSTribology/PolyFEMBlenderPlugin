@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "physics_export"
+version = "1.0.0"
+description = "This is the experimental Blender exporter for ETS Lab"
+authors = ["This plugin has been tested for Blender 4.2."]
+license = "GNU"
+readme = "README.md"
+packages = [{include = "physics_export"}]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+bpy = "^4.2.0"
+tetgen = "^0.6.5" 
+numpy = "^1.26.0"
+scipy = "^1.14.1"
+meshio = "^5.3.5"
+sympy = "^1.13.3"
+numpy = "^2.1.2"
+trimesh = "^4.4.9"
+noise = "^1.2.2"
+
+[tool.poetry.group.dev.dependencies]
+poetry = "^1.8.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
