@@ -2,31 +2,28 @@ import bpy
 import bmesh
 import numpy as np
 from mathutils import noise, Vector
+from ..properties.heightmap_properties import HeightmapSettings
 
 class ApplyHeightmapOperator(bpy.types.Operator):
-    """Apply Heightmap to Selected Face"""
+    """Apply a heightmap to the selected face using specified noise settings"""
     bl_idname = "object.apply_heightmap"
     bl_label = "Apply Heightmap"
+    bl_description = "Apply a heightmap to the selected face using specified noise settings"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Access the heightmap settings
         settings = context.scene.heightmap_settings
-
         obj = context.active_object
 
         if obj is None or obj.type != 'MESH':
             self.report({'ERROR'}, "Active object is not a mesh.")
             return {'CANCELLED'}
 
-        # Ensure we're in Edit mode
-        bpy.ops.object.mode_set(mode='EDIT')
+        if obj.mode != 'EDIT':
+            bpy.ops.object.mode_set(mode='EDIT')
 
-        # Get BMesh representation
         bm = bmesh.from_edit_mesh(obj.data)
         bm.faces.ensure_lookup_table()
-
-        # Get selected faces
         selected_faces = [f for f in bm.faces if f.select]
 
         if len(selected_faces) == 0:
@@ -38,109 +35,141 @@ class ApplyHeightmapOperator(bpy.types.Operator):
 
         face = selected_faces[0]
 
-        # Subdivide the face
-        bmesh.ops.subdivide_edges(
-            bm,
-            edges=face.edges,
-            cuts=settings.resolution,
-            use_grid_fill=True
-        )
-        bmesh.update_edit_mesh(obj.data)
+        # Generate a temporary heightmap to determine variability
+        noise_func, noise_params = self.get_noise_function(settings)
 
-        # Get updated mesh and face data
-        bm.faces.ensure_lookup_table()
-        face = bm.faces[face.index]  # Update face reference after subdivision
-
-        # Generate heightmap
-        verts = [v for v in face.verts]
-        size_x = size_y = int(np.sqrt(len(verts)))
-        if size_x * size_y != len(verts):
-            self.report({'ERROR'}, "The face does not have a square number of vertices.")
+        if noise_func is None:
+            self.report({'ERROR'}, "Invalid noise type.")
             return {'CANCELLED'}
 
-        # Choose noise function
+        try:
+            # Determine the initial resolution for heightmap to estimate variability
+            heightmap_resolution = 10  # Starting resolution for heightmap generation
+            size_x, size_y = heightmap_resolution, heightmap_resolution
+
+            heightmap = self.generate_heightmap(
+                size_x, size_y,
+                noise_func,
+                amplitude=settings.amplitude,
+                **noise_params
+            )
+        except Exception as e:
+            self.report({'ERROR'}, f"Heightmap generation failed: {e}")
+            return {'CANCELLED'}
+
+        # Calculate adaptive subdivision based on heightmap variability
+        variability = self.calculate_heightmap_variability(heightmap)
+        subdivisions = self.determine_subdivisions(variability)
+
+        # Subdivide the face adaptively
+        try:
+            bmesh.ops.subdivide_edges(
+                bm,
+                edges=face.edges,
+                cuts=subdivisions,
+                use_grid_fill=True
+            )
+        except Exception as e:
+            self.report({'ERROR'}, f"Subdivision failed: {e}")
+            return {'CANCELLED'}
+
+        bmesh.update_edit_mesh(obj.data)
+        bm.faces.ensure_lookup_table()
+        face = bm.faces[face.index]
+
+        verts = [v for v in face.verts]
+        size_x, size_y = self.calculate_grid_size(len(verts))
+
+        if size_x * size_y != len(verts):
+            self.report({'ERROR'}, "Unable to determine grid size from subdivided face.")
+            return {'CANCELLED'}
+
+        try:
+            heightmap = self.generate_heightmap(
+                size_x, size_y,
+                noise_func,
+                amplitude=settings.amplitude,
+                **noise_params
+            )
+        except Exception as e:
+            self.report({'ERROR'}, f"Heightmap generation failed: {e}")
+            return {'CANCELLED'}
+
+        try:
+            self.apply_heightmap_to_face(verts, heightmap, face.normal)
+        except Exception as e:
+            self.report({'ERROR'}, f"Applying heightmap failed: {e}")
+            return {'CANCELLED'}
+
+        bmesh.update_edit_mesh(obj.data)
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        self.report({'INFO'}, "Heightmap applied successfully.")
+        return {'FINISHED'}
+
+    def get_noise_function(self, settings):
+        """Retrieve the appropriate noise function and parameters based on settings."""
         if settings.noise_type == 'FBM':
-            noise_func = self.fbm_noise
-            noise_params = {
+            return self.fbm_noise, {
                 'octaves': settings.octaves,
                 'persistence': settings.persistence,
                 'lacunarity': settings.lacunarity
             }
         elif settings.noise_type == 'PERLIN':
-            noise_func = self.perlin_noise
-            noise_params = {}
+            return self.perlin_noise, {}
         elif settings.noise_type == 'SINE':
-            noise_func = self.sine_wave
-            noise_params = {}
+            return self.sine_wave, {}
         elif settings.noise_type == 'SQUARE':
-            noise_func = self.square_wave
-            noise_params = {}
+            return self.square_wave, {}
         else:
-            noise_func = self.fbm_noise
-            noise_params = {}
+            return None, {}
 
-        # Generate heightmap
-        heightmap = self.generate_heightmap(size_x, size_y, noise_func, amplitude=settings.amplitude, **noise_params)
-
-        # Apply heightmap to the face vertices
-        self.apply_heightmap_to_face(verts, heightmap, face.normal)
-
-        # Update the mesh
-        bmesh.update_edit_mesh(obj.data)
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        return {'FINISHED'}
-
-    # Noise functions and helpers
     def fbm_noise(self, x, y, z=0, octaves=4, persistence=0.5, lacunarity=2.0):
-        """Fractal Brownian Motion noise using mathutils.noise."""
-        value = 0.0
-        amplitude = 1.0
-        frequency = 1.0
-        for _ in range(octaves):
-            n = noise.noise(Vector((x * frequency, y * frequency, z * frequency)))
-            value += amplitude * n
-            amplitude *= persistence
-            frequency *= lacunarity
+        position = Vector((x, y, z))
+        value = noise.fractal(position, H=persistence, lacunarity=lacunarity, octaves=octaves)
         return value
 
     def perlin_noise(self, x, y, z=0):
-        """Simple Perlin noise using mathutils.noise."""
         return noise.noise(Vector((x, y, z)))
 
     def sine_wave(self, x, y, z=0):
-        """Sine wave noise."""
         return np.sin(10.0 * x)
 
     def square_wave(self, x, y, z=0):
-        """Square wave noise."""
         return np.sign(np.sin(10.0 * x))
 
     def generate_heightmap(self, size_x, size_y, noise_function, amplitude=1.0, **noise_params):
-        """Generate a heightmap using the specified noise function."""
-        heightmap = np.zeros((size_x, size_y))
-        for i in range(size_x):
-            for j in range(size_y):
-                x = i / size_x
-                y = j / size_y
-                heightmap[i, j] = noise_function(x, y, **noise_params)
-        # Normalize and scale the heightmap
+        x_vals = np.linspace(0, 1, size_x)
+        y_vals = np.linspace(0, 1, size_y)
+        xv, yv = np.meshgrid(x_vals, y_vals, indexing='ij')
+
+        vectorized_noise = np.vectorize(lambda x, y: noise_function(x, y, **noise_params))
+        heightmap = vectorized_noise(xv, yv)
+
         heightmap = self.normalize_heightmap(heightmap) * amplitude
         return heightmap
 
     def normalize_heightmap(self, heightmap):
-        """Normalize the heightmap to range [0, 1]."""
-        # Since mathutils.noise returns values in [-1, 1], adjust accordingly
-        return (heightmap + 1) / 2
+        min_val = np.min(heightmap)
+        max_val = np.max(heightmap)
+        if max_val - min_val == 0:
+            return heightmap
+        return (heightmap - min_val) / (max_val - min_val)
+
+    def calculate_heightmap_variability(self, heightmap):
+        """Calculate variability of the heightmap by looking at standard deviation."""
+        return np.std(heightmap)
+
+    def determine_subdivisions(self, variability, base_subdivisions=1):
+        """Determine the number of subdivisions based on variability."""
+        # More variability means more subdivisions. You can adjust the scale factor as needed.
+        scale_factor = 5  # The factor to convert variability to subdivisions.
+        return base_subdivisions + int(scale_factor * variability)
 
     def apply_heightmap_to_face(self, verts, heightmap, normal):
-        """Apply the heightmap to the face's vertices along the face normal."""
         size_x, size_y = heightmap.shape
-
-        # Sort vertices to match the heightmap grid
         verts_sorted = self.sort_vertices(verts, size_x, size_y)
 
-        # Apply heightmap to vertices
         for idx, v in enumerate(verts_sorted):
             i = idx // size_y
             j = idx % size_y
@@ -148,20 +177,11 @@ class ApplyHeightmapOperator(bpy.types.Operator):
             v.co += displacement
 
     def sort_vertices(self, verts, size_x, size_y):
-        """Sort vertices based on their local coordinates."""
-        # Get local coordinates of vertices
         local_coords = [v.co.copy() for v in verts]
+        origin = local_coords[0]
+        normal = self.compute_face_normal(verts)
+        u_axis, v_axis = self.compute_uv_axes(verts, normal)
 
-        # Compute the plane of the face
-        u_axis = verts[1].co - verts[0].co
-        v_axis = verts[size_y].co - verts[0].co
-
-        # Create a local coordinate system
-        origin = verts[0].co.copy()
-        u_axis.normalize()
-        v_axis.normalize()
-
-        # Map vertices to 2D grid
         uv_coords = []
         for co in local_coords:
             vec = co - origin
@@ -169,9 +189,26 @@ class ApplyHeightmapOperator(bpy.types.Operator):
             v = vec.dot(v_axis)
             uv_coords.append((u, v))
 
-        # Sort vertices based on uv_coords
         verts_uv = list(zip(verts, uv_coords))
         verts_uv.sort(key=lambda item: (item[1][1], item[1][0]))  # Sort by v then u
 
         sorted_verts = [item[0] for item in verts_uv]
         return sorted_verts
+
+    def compute_face_normal(self, verts):
+        v1 = verts[1].co - verts[0].co
+        v2 = verts[2].co - verts[0].co
+        normal = v1.cross(v2).normalized()
+        return normal
+
+    def compute_uv_axes(self, verts, normal):
+        u_axis = (verts[1].co - verts[0].co).normalized()
+        v_axis = normal.cross(u_axis).normalized()
+        return u_axis, v_axis
+
+    def calculate_grid_size(self, num_verts):
+        possible_sizes = [(i, num_verts // i) for i in range(2, num_verts) if num_verts % i == 0]
+        if not possible_sizes:
+            return 1, num_verts  # Fallback to 1xN grid
+        size_x, size_y = min(possible_sizes, key=lambda x: abs(x[0] - x[1]))
+        return size_x, size_y

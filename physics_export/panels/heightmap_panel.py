@@ -11,18 +11,26 @@ class HeightmapPanel(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.heightmap_settings
 
+        if not settings:
+            layout.label(text="Heightmap Settings not found.")
+            return
+
         layout.label(text="Apply Heightmap to Selected Face")
 
-        # Display properties
-        layout.prop(settings, 'amplitude')
-        layout.prop(settings, 'resolution')
-        layout.prop(settings, 'noise_type')
+        # Operator Button
+        layout.operator("object.apply_heightmap", text="Apply Heightmap")  # Ensure this line is present
+
+        layout.separator()
+
+        # Display properties in a collapsible box
+        box = layout.box()
+        box.label(text="Heightmap Settings")
+
+        box.prop(settings, 'amplitude')
+        box.prop(settings, 'resolution')
+        box.prop(settings, 'noise_type')
 
         if settings.noise_type == 'FBM':
-            layout.prop(settings, 'octaves')
-            layout.prop(settings, 'persistence')
-            layout.prop(settings, 'lacunarity')
-
-        # Operator button
-        layout.operator("object.apply_heightmap", text="Apply Heightmap")
-
+            box.prop(settings, 'octaves')
+            box.prop(settings, 'persistence')
+            box.prop(settings, 'lacunarity')

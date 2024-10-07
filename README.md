@@ -3,6 +3,11 @@
 This is the experimental blender exporter for ETS Lab.
 This plugin have been only tested for Blender 4.2.
 
+https://docs.blender.org/manual/en/latest/advanced/scripting/addon_tutorial.html
+https://docs.blender.org/manual/en/latest/advanced/extensions/index.html
+https://docs.blender.org/manual/en/latest/advanced/extensions/getting_started.html
+https://docs.blender.org/manual/en/latest/advanced/extensions/addons.html
+
 ## Installation
 The main steps for installing this plugin:
 1) Zip the directory `physics_export` inside this directory

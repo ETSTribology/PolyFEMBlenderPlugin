@@ -2,6 +2,18 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 
 class ExportPhysicsSettings(bpy.types.PropertyGroup):
+    export_constraints: BoolProperty(
+        name="Export Constraints",
+        description="Whether to export physics constraints",
+        default=True
+    )
+    export_path: StringProperty(
+        name="Export Path",
+        description="Path to export the JSON file",
+        default="//physics_export.json",
+        subtype='FILE_PATH'
+    )
+    
     export_directory: StringProperty(
         name="Export Directory",
         description="Directory where the files will be exported",
