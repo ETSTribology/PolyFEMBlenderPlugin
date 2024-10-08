@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import numpy as np
 from mathutils import noise, Vector
+from mathutils.kdtree import KDTree
 from ..properties.heightmap_properties import HeightmapSettings
 
 class ApplyHeightmapOperator(bpy.types.Operator):
@@ -26,11 +27,11 @@ class ApplyHeightmapOperator(bpy.types.Operator):
         bm.faces.ensure_lookup_table()
         selected_faces = [f for f in bm.faces if f.select]
 
-        if len(selected_faces) == 0:
-            self.report({'ERROR'}, "No face selected.")
+        if not selected_faces:
+            self.report({'ERROR'}, "Please select a face before applying the heightmap.")
             return {'CANCELLED'}
         elif len(selected_faces) > 1:
-            self.report({'ERROR'}, "Please select only one face.")
+            self.report({'ERROR'}, "Please select only one face. The current selection has too many.")
             return {'CANCELLED'}
 
         face = selected_faces[0]
@@ -43,8 +44,7 @@ class ApplyHeightmapOperator(bpy.types.Operator):
             return {'CANCELLED'}
 
         try:
-            # Determine the initial resolution for heightmap to estimate variability
-            heightmap_resolution = 10  # Starting resolution for heightmap generation
+            heightmap_resolution = max(10, int(20 * settings.amplitude))  # Adjust resolution based on amplitude
             size_x, size_y = heightmap_resolution, heightmap_resolution
 
             heightmap = self.generate_heightmap(
@@ -121,6 +121,12 @@ class ApplyHeightmapOperator(bpy.types.Operator):
             return self.sine_wave, {}
         elif settings.noise_type == 'SQUARE':
             return self.square_wave, {}
+        elif settings.noise_type == 'GABOR':
+            return self.gabor_noise, {
+                'orientation': settings.orientation,
+                'bandwidth': settings.bandwidth,
+                'power_spectrum': settings.power_spectrum
+            }
         else:
             return None, {}
 
@@ -138,6 +144,13 @@ class ApplyHeightmapOperator(bpy.types.Operator):
     def square_wave(self, x, y, z=0):
         return np.sign(np.sin(10.0 * x))
 
+    def gabor_noise(self, x, y, z=0, orientation=0, bandwidth=1.0, power_spectrum=1.0):
+        position = Vector((x, y, z))
+        gabor_value = np.cos(2 * np.pi * power_spectrum * position.x * np.cos(orientation) +
+                             position.y * np.sin(orientation)) * \
+                      np.exp(-0.5 * (position.length_squared / bandwidth ** 2))
+        return gabor_value
+
     def generate_heightmap(self, size_x, size_y, noise_function, amplitude=1.0, **noise_params):
         x_vals = np.linspace(0, 1, size_x)
         y_vals = np.linspace(0, 1, size_y)
@@ -150,11 +163,9 @@ class ApplyHeightmapOperator(bpy.types.Operator):
         return heightmap
 
     def normalize_heightmap(self, heightmap):
-        min_val = np.min(heightmap)
-        max_val = np.max(heightmap)
-        if max_val - min_val == 0:
-            return heightmap
-        return (heightmap - min_val) / (max_val - min_val)
+        mean = np.mean(heightmap)
+        std_dev = np.std(heightmap)
+        return (heightmap - mean) / (3 * std_dev)  # Normalize to -1 to 1 range
 
     def calculate_heightmap_variability(self, heightmap):
         """Calculate variability of the heightmap by looking at standard deviation."""
@@ -162,8 +173,7 @@ class ApplyHeightmapOperator(bpy.types.Operator):
 
     def determine_subdivisions(self, variability, base_subdivisions=1):
         """Determine the number of subdivisions based on variability."""
-        # More variability means more subdivisions. You can adjust the scale factor as needed.
-        scale_factor = 5  # The factor to convert variability to subdivisions.
+        scale_factor = 8 if 'GABOR' in settings.noise_type else 5
         return base_subdivisions + int(scale_factor * variability)
 
     def apply_heightmap_to_face(self, verts, heightmap, normal):
@@ -177,34 +187,18 @@ class ApplyHeightmapOperator(bpy.types.Operator):
             v.co += displacement
 
     def sort_vertices(self, verts, size_x, size_y):
-        local_coords = [v.co.copy() for v in verts]
-        origin = local_coords[0]
-        normal = self.compute_face_normal(verts)
-        u_axis, v_axis = self.compute_uv_axes(verts, normal)
+        kdtree = KDTree(len(verts))
+        for i, v in enumerate(verts):
+            kdtree.insert(v.co, i)
+        kdtree.balance()
 
-        uv_coords = []
-        for co in local_coords:
-            vec = co - origin
-            u = vec.dot(u_axis)
-            v = vec.dot(v_axis)
-            uv_coords.append((u, v))
-
-        verts_uv = list(zip(verts, uv_coords))
-        verts_uv.sort(key=lambda item: (item[1][1], item[1][0]))  # Sort by v then u
-
-        sorted_verts = [item[0] for item in verts_uv]
+        sorted_verts = []
+        for y in np.linspace(0, 1, size_y):
+            for x in np.linspace(0, 1, size_x):
+                location = self.interpolate_uv_position(x, y, verts)
+                _, index, _ = kdtree.find(location)
+                sorted_verts.append(verts[index])
         return sorted_verts
-
-    def compute_face_normal(self, verts):
-        v1 = verts[1].co - verts[0].co
-        v2 = verts[2].co - verts[0].co
-        normal = v1.cross(v2).normalized()
-        return normal
-
-    def compute_uv_axes(self, verts, normal):
-        u_axis = (verts[1].co - verts[0].co).normalized()
-        v_axis = normal.cross(u_axis).normalized()
-        return u_axis, v_axis
 
     def calculate_grid_size(self, num_verts):
         possible_sizes = [(i, num_verts // i) for i in range(2, num_verts) if num_verts % i == 0]
