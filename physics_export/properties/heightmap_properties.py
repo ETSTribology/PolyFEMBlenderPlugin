@@ -49,3 +49,11 @@ class HeightmapSettings(bpy.types.PropertyGroup):
         min=0.0,
         max=5.0
     ) # type: ignore
+
+    persistence: FloatProperty(
+        name="Persistence",
+        description="Controls the amplitude of each successive octave",
+        default=0.5,
+        min=0.0,
+        max=1.0
+    )  # type: ignore

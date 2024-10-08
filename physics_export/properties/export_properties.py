@@ -1,5 +1,26 @@
 import bpy
 from bpy.props import BoolProperty, EnumProperty, StringProperty, IntProperty, FloatProperty
+from bpy.types import PropertyGroup
+
+class NeumannBoundaryCondition(PropertyGroup):
+    id: IntProperty(
+        name="ID",
+        description="Point selection ID for Neumann boundary condition",
+        default=2
+    )
+    value_x: FloatProperty(name="X", default=0.0)
+    value_y: FloatProperty(name="Y", default=-15.0)
+    value_z: FloatProperty(name="Z", default=0.0)
+
+class DirichletBoundaryCondition(PropertyGroup):
+    id: IntProperty(
+        name="ID",
+        description="Point selection ID for Dirichlet boundary condition",
+        default=1
+    )
+    value_x: FloatProperty(name="X", default=0.0)
+    value_y: FloatProperty(name="Y", default=0.0)
+    value_z: FloatProperty(name="Z", default=0.0)
 
 class ExportPhysicsSettings(bpy.types.PropertyGroup):
     export_constraints: BoolProperty(

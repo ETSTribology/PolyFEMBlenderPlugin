@@ -296,14 +296,13 @@ class ExportPhysics(bpy.types.Operator):
                 return False
             elif export_format == 'MSH':
                 # Export to OFF format for TetWild
-                temp_off_filepath = os.path.join(os.path.dirname(mesh_filepath), f"{obj.name}_temp.off")
+                temp_off_filepath = os.path.join(os.path.dirname(mesh_filepath), f"{obj.name}_temp.stl")
                 success = self.export_mesh_to_stl(obj, temp_off_filepath)
                 if not success:
                     self.report({'ERROR'}, f"Failed to export {obj.name} to OFF format for TetWild.")
                     return False
                 # Run TetWild
                 success = run_tetwild(temp_off_filepath, mesh_filepath)
-                os.remove(temp_off_filepath)  # Remove temporary OFF file
                 if not success:
                     return False
             else:
@@ -441,12 +440,12 @@ def run_tetwild(input_file, output_file, ideal_edge_length=0.05, epsilon=1e-3, f
         "docker", "run", "--rm",
         "-v", f"{os.path.abspath(os.path.dirname(input_file))}:/data",  # Mount the directory containing the input file
         "yixinhu/tetwild",  # Docker image
-        "--input", f"/data/{os.path.basename(input_file)}",  # Input file path in container
+        "--input", f"{os.path.basename(input_file)}",  # Input file path in container
         "--ideal-edge-length", str(ideal_edge_length),
         "--epsilon", str(epsilon),
         "--filter-energy", str(filter_energy),
         "--max-pass", str(max_pass),
-        "--output", f"/data/{os.path.basename(output_file)}"  # Output file
+        "--output", f"{os.path.basename(output_file)}"  # Output file
     ]
 
     # Execute the command
@@ -460,5 +459,7 @@ def run_tetwild(input_file, output_file, ideal_edge_length=0.05, epsilon=1e-3, f
         return False
     except subprocess.CalledProcessError as e:
         print(f"Error running TetWild: {e}")
+        print(f"Standard Output: {e.stdout}")
+        print(f"Standard Error: {e.stderr}")
         print(e.stderr)
         return False
