@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import BoolProperty, EnumProperty, StringProperty
+from bpy.props import BoolProperty, EnumProperty, StringProperty, IntProperty, FloatProperty
 
 class ExportPhysicsSettings(bpy.types.PropertyGroup):
     export_constraints: BoolProperty(
@@ -49,5 +49,12 @@ class ExportPhysicsSettings(bpy.types.PropertyGroup):
     export_selected_only: BoolProperty(
         name="Export Selected Only",
         description="Export only selected objects",
+        default=False
+    )
+
+    # New property to control point extraction
+    export_point_selection: BoolProperty(
+        name="Export Point Selections",
+        description="Whether to export selected vertices as point selections",
         default=False
     )

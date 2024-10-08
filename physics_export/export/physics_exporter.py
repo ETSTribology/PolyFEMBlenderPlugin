@@ -4,6 +4,7 @@ import os
 import subprocess
 import shutil
 import math
+import bmesh
 from mathutils import Vector
 
 class ExportPhysics(bpy.types.Operator):
@@ -57,7 +58,7 @@ class ExportPhysics(bpy.types.Operator):
             if obj.type != 'MESH':
                 continue  # Skip non-mesh objects
 
-            obj_data = self.process_object(obj, current_id, output_dir, settings)
+            obj_data = self.process_object(obj, current_id, output_dir, settings, context)
             if obj_data is None:
                 return {'CANCELLED'}
 
@@ -73,7 +74,7 @@ class ExportPhysics(bpy.types.Operator):
         self.report({'INFO'}, f"Data exported to {json_filepath}")
         return {'FINISHED'}
 
-    def process_object(self, obj, obj_id, output_dir, settings):
+    def process_object(self, obj, obj_id, output_dir, settings, context):
         """Process an individual object and collect its data."""
         obj_data = {}
         obj_data["volume_selection"] = obj_id
@@ -111,7 +112,92 @@ class ExportPhysics(bpy.types.Operator):
         if custom_props:
             obj_data["custom_properties"] = custom_props
 
+        # Include point selection if vertices are selected and export_point_selection is True
+        if settings.export_point_selection:
+            point_selection = self.get_point_selection(obj, context)
+            if point_selection:
+                obj_data["point_selection"] = point_selection
+
         return obj_data
+
+    def get_point_selection(self, obj, context):
+        """Retrieve the bounding boxes of selected vertices and format them for JSON."""
+
+        point_selection_data = []
+
+        # Save the current mode
+        original_mode = obj.mode
+
+        # Switch to Edit Mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # Get the mesh data
+        bm = bmesh.from_edit_mesh(obj.data)
+
+        # Check if any vertices are selected
+        selected_verts = [v for v in bm.verts if v.select]
+        if not selected_verts:
+            bpy.ops.object.mode_set(mode='OBJECT')
+            return None  # No vertices selected for this object
+
+        # Calculate the bounding box of selected vertices
+        min_coord = Vector((float('inf'), float('inf'), float('inf')))
+        max_coord = Vector((float('-inf'), float('-inf'), float('-inf')))
+
+        for v in selected_verts:
+            global_coord = obj.matrix_world @ v.co
+            min_coord.x = min(min_coord.x, global_coord.x)
+            min_coord.y = min(min_coord.y, global_coord.y)
+            min_coord.z = min(min_coord.z, global_coord.z)
+
+            max_coord.x = max(max_coord.x, global_coord.x)
+            max_coord.y = max(max_coord.y, global_coord.y)
+            max_coord.z = max(max_coord.z, global_coord.z)
+
+        # Optionally, calculate relative coordinates based on object's bounding box
+        obj_bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+        obj_min = Vector((
+            min(corner.x for corner in obj_bbox),
+            min(corner.y for corner in obj_bbox),
+            min(corner.z for corner in obj_bbox)
+        ))
+        obj_max = Vector((
+            max(corner.x for corner in obj_bbox),
+            max(corner.y for corner in obj_bbox),
+            max(corner.z for corner in obj_bbox)
+        ))
+
+        # Function to calculate relative positions
+        def get_relative(value, min_obj, max_obj):
+            return (value - min_obj) / (max_obj - min_obj) if max_obj != min_obj else 0.0
+
+        # Calculate relative coordinates
+        rel_min = Vector((
+            get_relative(min_coord.x, obj_min.x, obj_max.x),
+            get_relative(min_coord.y, obj_min.y, obj_max.y),
+            get_relative(min_coord.z, obj_min.z, obj_max.z)
+        ))
+        rel_max = Vector((
+            get_relative(max_coord.x, obj_min.x, obj_max.x),
+            get_relative(max_coord.y, obj_min.y, obj_max.y),
+            get_relative(max_coord.z, obj_min.z, obj_max.z)
+        ))
+
+        # Prepare the point selection data
+        point_selection = [{
+            "id": 1,  # You may want to adjust the ID or make it dynamic
+            "box": [
+                [rel_min.x, rel_min.y, rel_min.z],
+                [rel_max.x, rel_max.y, rel_max.z]
+            ],
+            "relative": True
+        }]
+
+        bpy.ops.object.mode_set(mode='OBJECT')  # Return to Object Mode
+
+        return point_selection
     
 
     def export_mesh_to_stl(obj, filepath):
@@ -188,7 +274,10 @@ class ExportPhysics(bpy.types.Operator):
     
     def export_mesh(self, obj, mesh_filepath, settings):
         """Export the mesh of an object based on the selected format."""
-        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        for obj_iter in bpy.context.view_layer.objects:
+            obj_iter.select_set(False)
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
 
@@ -208,7 +297,7 @@ class ExportPhysics(bpy.types.Operator):
             elif export_format == 'MSH':
                 # Export to OFF format for TetWild
                 temp_off_filepath = os.path.join(os.path.dirname(mesh_filepath), f"{obj.name}_temp.off")
-                success = self.export_mesh_to_off(obj, temp_off_filepath)
+                success = self.export_mesh_to_stl(obj, temp_off_filepath)
                 if not success:
                     self.report({'ERROR'}, f"Failed to export {obj.name} to OFF format for TetWild.")
                     return False

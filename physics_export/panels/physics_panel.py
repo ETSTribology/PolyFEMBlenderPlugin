@@ -19,6 +19,7 @@ class ExtractPhysicsPanel(bpy.types.Panel):
         layout.prop(settings, 'export_format')
         layout.prop(settings, 'export_stl')
         layout.prop(settings, 'export_selected_only')
+        layout.prop(settings, 'export_point_selection')
 
         # Operator button
         layout.operator(ExportPhysics.bl_idname, text="Export Physics to JSON")
