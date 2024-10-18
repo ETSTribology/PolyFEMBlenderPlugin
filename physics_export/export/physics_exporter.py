@@ -198,7 +198,6 @@ class ExportPhysics(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')  # Return to Object Mode
 
         return point_selection
-    
 
     def export_mesh_to_stl(obj, filepath):
         """Exports the mesh data of an object to an STL file."""
@@ -221,7 +220,7 @@ class ExportPhysics(bpy.types.Operator):
             stl_file.write('endsolid {}\n'.format(obj.name))
             obj.to_mesh_clear()
         return True
-    
+
     def export_mesh_to_stl(self, obj, filepath):
             """Exports the mesh data of an object to an STL file."""
             mesh = obj.to_mesh()
@@ -271,7 +270,7 @@ class ExportPhysics(bpy.types.Operator):
 
         obj.to_mesh_clear()
         return True
-    
+
     def export_mesh(self, obj, mesh_filepath, settings):
         """Export the mesh of an object based on the selected format."""
         bpy.ops.object.mode_set(mode='OBJECT')
