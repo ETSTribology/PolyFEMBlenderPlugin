@@ -35,18 +35,3 @@ class PolyFemSettings(bpy.types.PropertyGroup):
         default=1,
         min=1
     )
-
-    frame_interval: IntProperty(
-        name="Frame Interval",
-        description="Frame interval between keyframes",
-        default=10,
-        min=1
-    )
-
-    # Scale factor for deformation
-    scale_factor: FloatProperty(
-        name="Scale Factor",
-        description="Scale factor for deformation vectors",
-        default=1.0,
-        min=0.0
-    )

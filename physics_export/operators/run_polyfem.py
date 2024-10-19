@@ -8,6 +8,9 @@ import math
 import numpy as np
 import mathutils
 import tempfile
+from datetime import datetime
+import threading
+import concurrent.futures
 
 class RunPolyFemSimulationOperator(Operator):
     """Run PolyFem simulation"""
@@ -73,14 +76,14 @@ class RenderPolyFemAnimationOperator(Operator):
     bl_label = "Render PolyFem Animation"
     bl_description = "Convert VTU files to OBJ, import as separate objects, and animate visibility."
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     def execute(self, context):
         # Assume polyfem_settings and its properties exist
         polyfem_settings = context.scene.polyfem_settings
         project_path = bpy.path.abspath(polyfem_settings.project_path)
-        scale_factor = polyfem_settings.scale_factor
+        scale_factor = 1
         start_frame = polyfem_settings.start_frame
-        frame_interval = polyfem_settings.frame_interval
+        frame_interval = 1
 
         if not os.path.exists(project_path):
             self.report({'ERROR'}, f"Project directory '{project_path}' does not exist.")
@@ -257,7 +260,7 @@ class RenderPolyFemAnimationOperator(Operator):
 
         return imported_objects  # Return the list of imported objects
 
-    def setup_visibility_keyframes(self, objects, start_frame, frame_interval):
+    def setup_visibility_keyframes(self, objects, start_frame, frame_interval=1):
         """
         For each object, set its visibility to True at its corresponding frame
         and False otherwise.
@@ -268,7 +271,7 @@ class RenderPolyFemAnimationOperator(Operator):
         - frame_interval: Integer, number of frames between each visibility change
         """
         for idx, obj in enumerate(objects):
-            frame = start_frame + idx * frame_interval
+            frame = start_frame + idx
 
             # Initially hide the object
             obj.hide_viewport = True
@@ -289,6 +292,7 @@ class RenderPolyFemAnimationOperator(Operator):
             obj.keyframe_insert(data_path="hide_render", frame=frame + 1)
 
             self.report({'INFO'}, f"Visibility keyframes set for '{obj.name}' at frame {frame}.")
+
 class OpenPolyFemDocsOperator(Operator):
     """Open PolyFem documentation in a browser"""
     bl_idname = "polyfem.open_docs"
