@@ -32,6 +32,6 @@ class PolyFemSettings(bpy.types.PropertyGroup):
     start_frame: IntProperty(
         name="Start Frame",
         description="Frame to start the animation",
-        default=1,
-        min=1
+        default=0,
+        min=0
     )

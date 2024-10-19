@@ -78,60 +78,110 @@ class RenderPolyFemAnimationOperator(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Assume polyfem_settings and its properties exist
         polyfem_settings = context.scene.polyfem_settings
         project_path = bpy.path.abspath(polyfem_settings.project_path)
-        scale_factor = 1
         start_frame = polyfem_settings.start_frame
-        frame_interval = 1
+        frame_interval = polyfem_settings.frame_interval  # Make frame_interval configurable
+        scale_factor = polyfem_settings.scale_factor      # Make scale_factor configurable
 
         if not os.path.exists(project_path):
             self.report({'ERROR'}, f"Project directory '{project_path}' does not exist.")
             return {'CANCELLED'}
 
+        # Define obj_folder
+        obj_folder = os.path.join(project_path, "obj")
+        os.makedirs(obj_folder, exist_ok=True)
+
         # Step 1: Read and sort VTU files
-        vtu_files = self.get_sorted_vtu_files(project_path)
-        if not vtu_files:
-            self.report({'ERROR'}, "No VTU files found in the specified directory.")
+        try:
+            vtu_files = [f for f in os.listdir(project_path) if f.startswith("step_") and f.endswith(".vtu")]
+            if not vtu_files:
+                self.report({'ERROR'}, "No VTU files found in the specified directory.")
+                return {'CANCELLED'}
+            # Sort files based on the numeric value after 'step_'
+            vtu_files.sort(key=lambda x: int(x.split('_')[1].split('.')[0]))
+            self.report({'INFO'}, f"Found {len(vtu_files)} VTU files.")
+        except Exception as e:
+            self.report({'ERROR'}, f"Error retrieving VTU files: {e}")
             return {'CANCELLED'}
 
         # Step 2: Create a collection for animation frames
         collection_name = "AnimationFrames"
         collection = self.ensure_collection(collection_name)
 
-        # Step 3: Process each VTU file
-        imported_objects = []
-        for idx, vtu_file in enumerate(vtu_files, start=0):
+        # Step 3: Convert VTU to OBJ in separate threads
+        conversion_errors = []
+        obj_file_paths = []
+
+        def convert_vtu_wrapper(vtu_file):
             vtu_path = os.path.join(project_path, vtu_file)
-            try:
-                # Convert VTU to temporary OBJ
-                tmp_obj_path = self.convert_vtu_to_obj(vtu_path, scale_factor)
-                self.report({'INFO'}, f"Temporary OBJ file created at '{tmp_obj_path}'.")
+            obj_filename = f"{os.path.splitext(vtu_file)[0]}.obj"
+            obj_path = os.path.join(obj_folder, obj_filename)
 
-                # Import OBJ as a separate object
-                objs = self.import_obj_as_object(tmp_obj_path, collection)
-                if not objs:
-                    self.report({'WARNING'}, f"No objects imported from '{vtu_file}'.")
-                    os.remove(tmp_obj_path)
-                    continue
-                imported_obj = objs[0]  # Assuming single object per OBJ
-                imported_obj.name = f"Frame_{idx}"
+            if not os.path.exists(obj_path):
+                try:
+                    tmp_obj_path = self.convert_vtu_to_obj(vtu_path, scale_factor)
+                    os.rename(tmp_obj_path, obj_path)
+                    self.report({'INFO'}, f"Converted '{vtu_file}' to OBJ.")
+                except Exception as e:
+                    error_msg = f"Failed to convert '{vtu_file}': {e}"
+                    self.report({'ERROR'}, error_msg)
+                    conversion_errors.append(error_msg)
+                    return None
+            else:
+                self.report({'INFO'}, f"OBJ already exists for '{vtu_file}'. Skipping conversion.")
 
-                imported_objects.append(imported_obj)
+            return obj_path
 
-                # Delete the temporary OBJ file
-                os.remove(tmp_obj_path)
-                self.report({'INFO'}, f"Temporary OBJ file '{tmp_obj_path}' deleted.")
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {executor.submit(convert_vtu_wrapper, vtu): vtu for vtu in vtu_files}
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    obj_file_paths.append(result)
 
-            except Exception as e:
-                self.report({'ERROR'}, f"Failed to process '{vtu_file}': {e}")
-                continue
+        if conversion_errors and not obj_file_paths:
+            self.report({'ERROR'}, "All conversions failed. Animation setup aborted.")
+            return {'CANCELLED'}
+        elif conversion_errors:
+            self.report({'WARNING'}, f"Some conversions failed: {conversion_errors}")
 
-        if not imported_objects:
-            self.report({'ERROR'}, "No objects were imported. Animation setup aborted.")
+        if not obj_file_paths:
+            self.report({'ERROR'}, "No OBJ files to import. Animation setup aborted.")
             return {'CANCELLED'}
 
-        # Step 4: Set up visibility keyframes
+        # Step 4: Import OBJ files on the main thread
+        imported_objects = []
+        import_errors = []
+
+        for idx, obj_path in enumerate(obj_file_paths):
+            try:
+                bpy.ops.object.select_all(action='DESELECT')
+                bpy.ops.import_scene.obj(filepath=obj_path)
+                imported_objs = bpy.context.selected_objects.copy()
+                if not imported_objs:
+                    warning_msg = f"No objects imported from '{obj_path}'."
+                    self.report({'WARNING'}, warning_msg)
+                    import_errors.append(warning_msg)
+                    continue
+                imported_obj = imported_objs[0]  # Assuming single object per OBJ
+                imported_obj.name = f"Frame_{idx}"
+                collection.objects.link(imported_obj)
+                bpy.context.scene.collection.objects.unlink(imported_obj)
+                imported_objects.append(imported_obj)
+                self.report({'INFO'}, f"Imported '{imported_obj.name}'.")
+            except Exception as e:
+                error_msg = f"Failed to import '{obj_path}': {e}"
+                self.report({'ERROR'}, error_msg)
+                import_errors.append(error_msg)
+
+        if import_errors and not imported_objects:
+            self.report({'ERROR'}, "All imports failed. Animation setup aborted.")
+            return {'CANCELLED'}
+        elif import_errors:
+            self.report({'WARNING'}, f"Some imports failed: {import_errors}")
+
+        # Step 5: Set up visibility keyframes
         self.setup_visibility_keyframes(imported_objects, start_frame, frame_interval)
 
         self.report({'INFO'}, "Animation rendering completed successfully.")
@@ -261,15 +311,6 @@ class RenderPolyFemAnimationOperator(Operator):
         return imported_objects  # Return the list of imported objects
 
     def setup_visibility_keyframes(self, objects, start_frame, frame_interval=1):
-        """
-        For each object, set its visibility to True at its corresponding frame
-        and False otherwise.
-
-        Parameters:
-        - objects: List of bpy.types.Object
-        - start_frame: Integer, the starting frame of the animation
-        - frame_interval: Integer, number of frames between each visibility change
-        """
         for idx, obj in enumerate(objects):
             frame = start_frame + idx
 
