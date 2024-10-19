@@ -1,7 +1,8 @@
 import bpy
 
+
 class PolyFemPanel(bpy.types.Panel):
-    """Creates a panel for running PolyFem"""
+    """Creates a panel for PolyFem simulation and rendering"""
     bl_label = "PolyFem Runner"
     bl_idname = "VIEW3D_PT_polyfem_runner"
     bl_space_type = 'VIEW_3D'
@@ -12,14 +13,33 @@ class PolyFemPanel(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.polyfem_settings
 
-        layout.label(text="PolyFem Executable Path:")
-        layout.prop(settings, "polyfem_executable_path", text="")
+        # PolyFem Simulation Settings
+        layout.label(text="PolyFem Settings")
+        row = layout.row()
+        row.prop(settings, "polyfem_executable_path", text="Executable Path")
+        row = layout.row()
+        row.prop(settings, "polyfem_json_input", text="JSON Configuration")
+        row = layout.row()
+        row.prop(settings, "project_path", text="Project Directory")
 
-        layout.label(text="PolyFem JSON Configuration:")
-        layout.prop(settings, "polyfem_json_input", text="", expand=True)
-
-        layout.label(text="Project Path:")
-        layout.prop(settings, "project_path", text="")
-
+        # Run Simulation Button
+        layout.separator()
         layout.operator("polyfem.run_simulation", text="Run PolyFem Simulation", icon='PLAY')
+
+        # Rendering Settings
+        layout.separator()
+        layout.label(text="Rendering Settings")
+        row = layout.row()
+        row.prop(settings, "start_frame", text="Start Frame")
+        row = layout.row()
+        row.prop(settings, "frame_interval", text="Frame Interval")
+        row = layout.row()
+        row.prop(settings, "scale_factor", text="Scale Factor")
+
+        # Render Animation Button
+        layout.separator()
+        layout.operator("polyfem.render_animation", text="Render Animation", icon='RENDER_ANIMATION')
+
+        # Open Documentation Button
+        layout.separator()
         layout.operator("polyfem.open_docs", text="Open PolyFem Docs", icon='URL')

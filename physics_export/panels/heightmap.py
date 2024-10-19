@@ -1,3 +1,4 @@
+# panels/heightmap.py
 import bpy
 
 class HeightmapPanel(bpy.types.Panel):
@@ -28,11 +29,26 @@ class HeightmapPanel(bpy.types.Panel):
         box.prop(settings, 'noise_type')
 
         if settings.noise_type == 'FBM':
-            box.prop(settings, 'octaves')
-            box.prop(settings, 'persistence')
+            box.prop(settings, 'H')
             box.prop(settings, 'lacunarity')
+            box.prop(settings, 'octaves')
 
         if settings.noise_type == 'GABOR':
             box.prop(settings, 'orientation')
             box.prop(settings, 'bandwidth')
             box.prop(settings, 'power_spectrum')
+
+        layout.separator()
+        box = layout.box()
+        box.label(text="Normal Map to Displacement Map")
+
+        box.prop(settings, 'normal_map')
+        box.prop(settings, 'project_path')
+
+        # New properties for displacement map generation
+        box.prop(settings, 'contrast')
+        box.prop(settings, 'invert_displacement')
+
+        box.operator("object.convert_normal_to_displacement", text="Convert to Displacement Map")
+
+        layout.separator()

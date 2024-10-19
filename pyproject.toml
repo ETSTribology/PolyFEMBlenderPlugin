@@ -10,14 +10,14 @@ packages = [{include = "physics_export"}]
 [tool.poetry.dependencies]
 python = "^3.7"
 bpy = "^4.2.0"
-tetgen = "^0.6.5" 
-numpy = "^1.26.0"
+tetgen = "^0.6.5"
 scipy = "^1.14.1"
 meshio = "^5.3.5"
 sympy = "^1.13.3"
 numpy = "^2.1.2"
 trimesh = "^4.4.9"
 noise = "^1.2.2"
+rich = "^13.9.1"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.8.3"
