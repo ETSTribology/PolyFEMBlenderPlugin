@@ -1,4 +1,3 @@
-# properties/heightmap.py
 import bpy
 from bpy.props import FloatProperty, IntProperty, EnumProperty, StringProperty, BoolProperty
 from bpy.types import PropertyGroup

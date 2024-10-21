@@ -1,4 +1,3 @@
-# panels/heightmap.py
 import bpy
 
 class HeightmapPanel(bpy.types.Panel):

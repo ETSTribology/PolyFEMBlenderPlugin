@@ -30,11 +30,7 @@ class PolyFemPanel(bpy.types.Panel):
         layout.separator()
         layout.label(text="Rendering Settings")
         row = layout.row()
-        row.prop(settings, "start_frame", text="Start Frame")
-        row = layout.row()
         row.prop(settings, "frame_interval", text="Frame Interval")
-        row = layout.row()
-        row.prop(settings, "scale_factor", text="Scale Factor")
 
         # Render Animation Button
         layout.separator()

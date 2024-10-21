@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "physics_export"
-version = "1.0.0"
+version = "1.0.9"
 description = "This is the experimental Blender exporter for ETS Lab"
 authors = ["This plugin has been tested for Blender 4.2."]
 license = "GNU"
@@ -8,8 +8,7 @@ readme = "README.md"
 packages = [{include = "physics_export"}]
 
 [tool.poetry.dependencies]
-python = "^3.7"
-bpy = "^4.2.0"
+python = "^3.11"
 tetgen = "^0.6.5"
 scipy = "^1.14.1"
 meshio = "^5.3.5"
@@ -25,3 +24,14 @@ poetry = "^1.8.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.vendorize]
+target = "_vendor"
+packages = [
+    "meshio==5.3.5",
+    "numpy==2.1.2",
+    "scipy==1.14.1",
+    "trimesh==4.5.0",
+    "tetgen==0.6.5",
+    "rich==13.9.2"
+]

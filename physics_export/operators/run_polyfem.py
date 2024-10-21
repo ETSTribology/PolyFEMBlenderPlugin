@@ -1,7 +1,7 @@
 import bpy
 import os
 import subprocess
-import meshio
+from .._vendor import meshio
 from bpy.types import Operator
 import webbrowser
 import math
