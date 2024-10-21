@@ -14,7 +14,8 @@ license = [
 ]
 
 website = "https://github.com/ETSTribology/BlenderPluginSimulation"
-tags = ["Object", "Physics", "Export"]
+tags = ["Object", "Physics", "Import-Export"]
+platforms = ["windows-x64"]
 
 [permissions]
 files = "Required for reading and writing files during export"

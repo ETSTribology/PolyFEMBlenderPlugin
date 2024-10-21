@@ -23,6 +23,8 @@ for package_name, package_version in packages.items():
     command = [
         sys.executable, '-m', 'pip', 'download',
         '--only-binary=:all:',
+        '--python-version=3.11',
+        '--platform=win_amd64',
         '-d', wheels_dir,
         f"{package_name}=={package_version}"
     ]
