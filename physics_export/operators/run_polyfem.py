@@ -117,8 +117,13 @@ class RunPolyFemSimulationOperator(Operator):
         """Process messages from the report queue and display them to the user."""
         messages = []
         while not self.report_queue.empty():
-            level, message = self.report_queue.get()
-            self.report({level}, message)
+            try:
+                level, message = self.report_queue.get()
+                self.report({level}, message)
+            except ValueError:
+                message = self.report_queue.get()
+                level = 'ERROR'
+                continue
 
          # Check if the thread has finished
         if not RunPolyFemSimulationOperator._thread.is_alive():
@@ -226,7 +231,8 @@ class RenderPolyFemAnimationOperator(Operator):
 
         # Step 2: Convert VTU to OBJ in separate threads
         conversion_errors = []
-        obj_file_paths = []
+        obj_file_paths = [None] * len(vtu_files)
+        index_map = {vtu_file: index for index, vtu_file in enumerate(vtu_files)}
 
         def convert_vtu_wrapper(vtu_file):
             vtu_path = os.path.join(project_path, vtu_file)
@@ -251,9 +257,11 @@ class RenderPolyFemAnimationOperator(Operator):
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             futures = {executor.submit(convert_vtu_wrapper, vtu): vtu for vtu in vtu_files}
             for future in concurrent.futures.as_completed(futures):
+                vtu_file = futures[future]
+                index = index_map[vtu_file]
                 result = future.result()
                 if result:
-                    obj_file_paths.append(result)
+                    obj_file_paths[index] = result
 
         # After conversion, store the list
         RenderPolyFemAnimationOperator._obj_file_list = obj_file_paths
@@ -305,7 +313,7 @@ class RenderPolyFemAnimationOperator(Operator):
 
         obj_path = RenderPolyFemAnimationOperator._obj_file_list[RenderPolyFemAnimationOperator._current_import_index]
         collection = self.ensure_collection("AnimationFrames")
-        step_number = RenderPolyFemAnimationOperator._current_import_index
+        step_number = RenderPolyFemAnimationOperator._current_import_index + 1
         frame_interval = 1  # Default frame interval
         frame = 1 + (step_number - 1) * frame_interval
 

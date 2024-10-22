@@ -9,7 +9,7 @@ export\__init__.py,d41d8cd98f00b204e9800998ecf8427e
 operators\convert_normal_to_displacement.py,59e94201e1335bbc79cd05755f175fbb
 operators\create_polyfem_json.py,a40cc0de66599197ef7fa51f3a567f1a
 operators\heightmap.py,65750f0381d62c4c66a4be40ee82bba2
-operators\run_polyfem.py,27a5c295fccd0ed087defe106cef4812
+operators\run_polyfem.py,8a0f07f90064f90efdf0ebff412275ac
 operators\__init__.py,d41d8cd98f00b204e9800998ecf8427e
 panels\heightmap.py,7268572841ce7fd9f67614eae53fc10a
 panels\physics.py,9d93640b8ea9fc96f393df0eacbd1cbf
