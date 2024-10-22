@@ -4,11 +4,7 @@ import subprocess
 from .._vendor import meshio
 from bpy.types import Operator, PropertyGroup
 import webbrowser
-import math
-import numpy as np
-import mathutils
 import tempfile
-from datetime import datetime
 import threading
 import concurrent.futures
 import queue
@@ -22,8 +18,8 @@ class POLYFEM_OT_ShowMessageBox(Operator):
     bl_label = "PolyFem Notification"
     bl_options = {'REGISTER'}
 
-    message: bpy.props.StringProperty(name="Message")
-    title: bpy.props.StringProperty(name="Title", default="PolyFem Notification")
+    message: bpy.props.StringProperty(name="Message") # type: ignore
+    title: bpy.props.StringProperty(name="Title", default="PolyFem Notification") # type: ignore
     icon: bpy.props.EnumProperty(
         name="Icon",
         items=[
@@ -119,6 +115,7 @@ class RunPolyFemSimulationOperator(Operator):
 
     def process_report_queue(self):
         """Process messages from the report queue and display them to the user."""
+        messages = []
         while not self.report_queue.empty():
             level, message = self.report_queue.get()
             self.report({level}, message)
@@ -308,7 +305,7 @@ class RenderPolyFemAnimationOperator(Operator):
 
         obj_path = RenderPolyFemAnimationOperator._obj_file_list[RenderPolyFemAnimationOperator._current_import_index]
         collection = self.ensure_collection("AnimationFrames")
-        step_number = RenderPolyFemAnimationOperator._current_import_index + 1
+        step_number = RenderPolyFemAnimationOperator._current_import_index
         frame_interval = 1  # Default frame interval
         frame = 1 + (step_number - 1) * frame_interval
 
