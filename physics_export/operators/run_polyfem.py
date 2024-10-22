@@ -11,6 +11,7 @@ import tempfile
 from datetime import datetime
 import threading
 import concurrent.futures
+import queue
 
 class RunPolyFemSimulationOperator(Operator):
     """Run PolyFem simulation"""
@@ -35,38 +36,34 @@ class RunPolyFemSimulationOperator(Operator):
         return {'FINISHED'}
 
     def run_polyfem_simulation(self, context):
-        """Run the PolyFem simulation with the provided JSON config"""
+        """Run the PolyFem simulation using Docker with the provided JSON config"""
         polyfem_settings = context.scene.polyfem_settings
-        executable_path = bpy.path.abspath(polyfem_settings.polyfem_executable_path)
         json_input = bpy.path.abspath(polyfem_settings.polyfem_json_input)
         project_path = bpy.path.abspath(polyfem_settings.project_path)
-
-        if not os.path.isfile(executable_path):
-            self.report({'ERROR'}, f"PolyFem executable '{executable_path}' not found.")
-            return False
 
         if not os.path.isfile(json_input):
             self.report({'ERROR'}, f"PolyFem JSON input file '{json_input}' not found.")
             return False
-
-        # Execute PolyFem
         try:
             result = subprocess.run(
-                [executable_path, "--json", json_input],
+                [
+                    "docker", "run", "--rm",
+                    "-v", f"{project_path}:/data",
+                    "antoinebou12/polyfem", "--json", f"/data/{os.path.basename(json_input)}"
+                ],
                 capture_output=True,
                 text=True,
                 check=True,
-                cwd=project_path  # Ensure the simulation runs in the project directory
             )
-            self.report({'INFO'}, f"PolyFem Output:\n{result.stdout}")
+            self.report({'INFO'}, f"PolyFem Docker Output:\n{result.stdout}")
             if result.stderr:
-                self.report({'WARNING'}, f"PolyFem Warnings:\n{result.stderr}")
+                self.report({'WARNING'}, f"PolyFem Docker Warnings:\n{result.stderr}")
             return True
         except subprocess.CalledProcessError as e:
-            self.report({'ERROR'}, f"PolyFem simulation failed:\n{e.stderr}")
+            self.report({'ERROR'}, f"PolyFem Docker simulation failed:\n{e.stderr}")
             return False
         except Exception as e:
-            self.report({'ERROR'}, f"An unexpected error occurred while running PolyFem:\n{e}")
+            self.report({'ERROR'}, f"An unexpected error occurred while running PolyFem in Docker:\n{e}")
             return False
 
 
@@ -80,9 +77,9 @@ class RenderPolyFemAnimationOperator(Operator):
     def execute(self, context):
         polyfem_settings = context.scene.polyfem_settings
         project_path = bpy.path.abspath(polyfem_settings.project_path)
-        start_frame = polyfem_settings.start_frame
-        frame_interval = polyfem_settings.frame_interval  # Make frame_interval configurable
-        scale_factor = polyfem_settings.scale_factor      # Make scale_factor configurable
+        start_frame = 0
+        frame_interval = 1
+        scale_factor = 1
 
         if not os.path.exists(project_path):
             self.report({'ERROR'}, f"Project directory '{project_path}' does not exist.")
@@ -157,7 +154,7 @@ class RenderPolyFemAnimationOperator(Operator):
         for idx, obj_path in enumerate(obj_file_paths):
             try:
                 bpy.ops.object.select_all(action='DESELECT')
-                bpy.ops.import_scene.obj(filepath=obj_path)
+                bpy.ops.wm.obj_import(filepath=obj_path)
                 imported_objs = bpy.context.selected_objects.copy()
                 if not imported_objs:
                     warning_msg = f"No objects imported from '{obj_path}'."

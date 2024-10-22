@@ -16,8 +16,6 @@ class PolyFemPanel(bpy.types.Panel):
         # PolyFem Simulation Settings
         layout.label(text="PolyFem Settings")
         row = layout.row()
-        row.prop(settings, "polyfem_executable_path", text="Executable Path")
-        row = layout.row()
         row.prop(settings, "polyfem_json_input", text="JSON Configuration")
         row = layout.row()
         row.prop(settings, "project_path", text="Project Directory")
@@ -29,8 +27,6 @@ class PolyFemPanel(bpy.types.Panel):
         # Rendering Settings
         layout.separator()
         layout.label(text="Rendering Settings")
-        row = layout.row()
-        row.prop(settings, "frame_interval", text="Frame Interval")
 
         # Render Animation Button
         layout.separator()
