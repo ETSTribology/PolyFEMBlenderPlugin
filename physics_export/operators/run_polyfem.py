@@ -8,6 +8,8 @@ import tempfile
 import threading
 import concurrent.futures
 import queue
+import sys
+import os
 
 # ----------------------------
 # Popup Message Box Operator
@@ -85,6 +87,7 @@ class RunPolyFemSimulationOperator(Operator):
 
     def run_polyfem_simulation(self, context):
         """Run the PolyFem simulation using Docker with the provided JSON config"""
+        import sys
         polyfem_settings = context.scene.polyfem_settings
         json_input = bpy.path.abspath(polyfem_settings.polyfem_json_input)
         project_path = bpy.path.abspath(polyfem_settings.project_path)
@@ -93,39 +96,53 @@ class RunPolyFemSimulationOperator(Operator):
             self.report_queue.put(('ERROR', f"PolyFem JSON input file '{json_input}' not found."))
             return
 
+        # Adjust paths for Docker on Windows
+        if sys.platform.startswith('win'):
+            # Convert backslashes to forward slashes
+            project_path = project_path.replace('\\', '/')
+            json_input = json_input.replace('\\', '/')
+
+            # Remove colon from drive letter and prefix with '/'
+            if ':' in project_path:
+                drive, rest = project_path.split(':', 1)
+                project_path = f'/{drive}{rest}'
+            if ':' in json_input:
+                drive, rest = json_input.split(':', 1)
+                json_input = f'/{drive}{rest}'
+
+            # Ensure the paths are properly quoted
+            project_path = f'"{project_path}"'
+            json_input_basename = os.path.basename(json_input)
+        else:
+            json_input_basename = os.path.basename(json_input)
+
         try:
             result = subprocess.run(
-                [
-                    "docker", "run", "--rm",
-                    "-v", f"{project_path}:/data",
-                    "antoinebou12/polyfem", "--json", f"/data/{os.path.basename(json_input)}"
-                ],
+                f'docker run --rm -v {project_path}:/data antoinebou12/polyfem --json /data/{json_input_basename}',
                 capture_output=True,
                 text=True,
                 check=True,
+                shell=True  # Ensure shell is used on Windows
             )
             self.report_queue.put(('INFO', f"PolyFem Docker Output:\n{result.stdout}"))
             if result.stderr:
                 self.report_queue.put(('WARNING', f"PolyFem Docker Warnings:\n{result.stderr}"))
             self.report_queue.put(('INFO', "PolyFem simulation completed successfully."))
         except subprocess.CalledProcessError as e:
-            self.report_queue.put({'ERROR'}, f"PolyFem Docker simulation failed:\n{e.stderr}")
+            self.report_queue.put(('ERROR', f"PolyFem Docker simulation failed:\n{e.stderr}"))
         except Exception as e:
-            self.report_queue.put({'ERROR'}, f"An unexpected error occurred while running PolyFem in Docker:\n{e}")
+            self.report_queue.put(('ERROR', f"An unexpected error occurred while running PolyFem in Docker:\n{e}"))
 
     def process_report_queue(self):
         """Process messages from the report queue and display them to the user."""
         messages = []
         while not self.report_queue.empty():
-            try:
-                level, message = self.report_queue.get()
-                self.report({level}, message)
-            except ValueError:
-                message = self.report_queue.get()
-                level = 'ERROR'
-                continue
+            level, message = self.report_queue.get()
+            self.report({level}, message)
+            messages.append((level, message))  # Append message to the list
 
-         # Check if the thread has finished
+        # Now messages contain all the messages processed
+        # Check if the thread has finished
         if not RunPolyFemSimulationOperator._thread.is_alive():
             # Determine the final status
             info_messages = [msg for lvl, msg in messages if lvl == 'INFO']
@@ -152,6 +169,7 @@ class RunPolyFemSimulationOperator(Operator):
         else:
             # Continue the timer
             return 0.1  # Continue the timer every 0.1 seconds
+
 
 # Render PolyFem Animation Operator
 class RenderPolyFemAnimationOperator(Operator):
