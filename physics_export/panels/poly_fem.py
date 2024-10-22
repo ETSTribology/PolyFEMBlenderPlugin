@@ -32,6 +32,10 @@ class PolyFemPanel(bpy.types.Panel):
         layout.separator()
         layout.operator("polyfem.render_animation", text="Render Animation", icon='RENDER_ANIMATION')
 
+        # Clear Cache
+        layout.separator()
+        layout.operator("polyfem.clear_cache", text="Clear Cache", icon='X')
+
         # Open Documentation Button
         layout.separator()
         layout.operator("polyfem.open_docs", text="Open PolyFem Docs", icon='URL')

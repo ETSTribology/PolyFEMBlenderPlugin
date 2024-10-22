@@ -19,7 +19,7 @@ from .properties.polyfem import PolyFemSettings
 from .properties.export import ExportPhysicsSettings
 from .properties.heightmap import HeightmapSettings
 from .operators.heightmap import ApplyHeightmapOperator
-from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator
+from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator
 from .operators.convert_normal_to_displacement import ConvertNormalToDisplacementOperator
 from .panels.heightmap import HeightmapPanel
 from .panels.poly_fem import PolyFemPanel
@@ -50,6 +50,7 @@ classes = [
     RunPolyFemSimulationOperator,
     RenderPolyFemAnimationOperator,
     OpenPolyFemDocsOperator,
+    ClearCachePolyFemOperator,
 ]
 
 bl_info = {
