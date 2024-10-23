@@ -1,16 +1,13 @@
-name: Release
+name: Build and Deploy
 
 on:
-  pull_request:
-    branches: [ '**' ]
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version of the release in format X.Y.Z'
-        required: true
-        default: '1.0.10'
       release_stage:
-        description: 'Stage of the release (alpha, beta, rc)'
+        description: 'Release stage (alpha, beta, rc)'
         required: true
         default: 'alpha'
 
@@ -18,30 +15,42 @@ permissions:
   contents: write
 
 jobs:
-  Build:
+  Build_Addon:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Build the Blender add-on
-      - name: Build Addon
-        uses: blenderkit/blender-addon-build@main
-        with:
-          name: physics_export
-          exclude-files: ".git;.github;README.md"
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install blender
 
-  Release:
-    runs-on: ubuntu-latest
-    needs: Build
-
-    steps:
-      - name: Release Addon
-        uses: blenderkit/blender-addon-release@main
+      - name: Set Up Python
+        uses: actions/setup-python@v4
         with:
-          artifact_name: physics_export
-          release_name: Physics Export Addon
-          version: ${{ github.event.inputs.version }}
-          release_stage: ${{ github.event.inputs.release_stage }}
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: pip install -r polyfem/requirements.txt
+
+      - name: Extract version from blender_manifest.toml
+        id: get_version
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' polyfem/blender_manifest.toml)
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+      - name: Build Addon with Blender
+        run: |
+          blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/physics_export-v${{ env.VERSION }}.zip')"
+
+      - name: Generate Static Repository JSON
+        run: |
+          blender --background --command extension server-generate --repo-dir=docs
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
