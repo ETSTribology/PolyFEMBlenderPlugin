@@ -122,16 +122,6 @@ To view these panels:
 
 ---
 
-## Contributing
-
-We welcome contributions to improve the add-on. If you want to contribute:
-
-1. Fork the repository.
-2. Create a new branch (`feature/your-feature` or `fix/your-fix`).
-3. Submit a pull request with a detailed explanation of the changes.
-
----
-
 ## License
 
 This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](./LICENSE) file for more details.
