@@ -91,14 +91,14 @@ classes = [
 ]
 
 bl_info = {
-    "name": "BlenderPluginSimulation",
+    "name": "PolyFem",
     "author": "Antoine Boucher",
     "version": (1, 1, 10),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > Physics",
-    "description": "Extracts objects and their physics constraints and exports to JSON",
+    "description": "PolyFEM simulation plugin for Blender",
     "category": "Object",
-    "wiki_url": "https://github.com/ETSTribology/BlenderPluginSimulation",
+    "wiki_url": "https://github.com/ETSTribology/PolyFEMBlenderPlugin",
 }
 
 def is_class_registered(cls):

@@ -4,7 +4,7 @@ import time
 import hashlib
 
 def zip_plugin():
-    """Zips the './physics_export' directory, only adding or updating files that have changed."""
+    """Zips the './polyfem' directory, only adding or updating files that have changed."""
 
     def get_file_hash(filepath):
         """Compute the MD5 hash of a file for change detection."""
@@ -16,8 +16,8 @@ def zip_plugin():
         return hasher.hexdigest()
 
     start_time = time.time()
-    zip_filename = 'BlenderPluginSimulation.zip'
-    source_dir = './physics_export'
+    zip_filename = 'polyfem.zip'
+    source_dir = './polyfem'
     file_hashes = {}
     hash_filename = 'file_hashes.txt'
 

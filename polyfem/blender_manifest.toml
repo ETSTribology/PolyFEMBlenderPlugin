@@ -3,14 +3,14 @@ schema_version = "1.0.0"
 id = "polyfem"
 version = "1.0.10"
 name = "PolyFem"
-tagline = "Exports objects and physics constraints to PolyFem"
+tagline = "PolyFEM simulation plugin for Blender"
 maintainer = "Antoine Boucher <antoine@antoineboucher.info>"
 type = "add-on"
 
 blender_version_min = "4.2.0"
 
 license = [
-  "GPL-3.0-or-later"
+  "MIT"
 ]
 
 website = "https://github.com/ETSTribology/PolyFEMBlenderPlugin"

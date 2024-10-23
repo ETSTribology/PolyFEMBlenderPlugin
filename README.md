@@ -38,8 +38,8 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
 
 To install the Blender Plugin Simulation to JSON, follow these steps:
 
-1. **Zip the `physics_export` directory**:
-   - Navigate to the plugin directory and zip the entire `physics_export` folder. This folder contains the core files required for the plugin to function.
+1. **Zip the `polyfem` directory**:
+   - Navigate to the plugin directory and zip the entire `polyfem` folder. This folder contains the core files required for the plugin to function.
 
 2. **Install the plugin in Blender**:
    - Open Blender.
@@ -47,7 +47,7 @@ To install the Blender Plugin Simulation to JSON, follow these steps:
    - Click on the **Install** button and select the zip file you created in the previous step.
 
 3. **Activate the plugin**:
-   - After installation, search for `BlenderPluginSimulation` in the add-on preferences and activate it by clicking the checkbox.
+   - After installation, search for `PolyFEM` in the add-on preferences and activate it by clicking the checkbox.
 
 ---
 
@@ -73,7 +73,7 @@ Ensure you have Python 3.11 installed. These dependencies are automatically mana
 ## File Structure
 
 ```
-physics_export/
+polyfem/
 ├── __init__.py                            # Main entry point for the plugin
 ├── export/
 │   ├── physics_exporter.py                # Handles exporting objects and physics constraints

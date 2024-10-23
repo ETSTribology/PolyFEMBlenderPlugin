@@ -73,7 +73,7 @@ def build_addon(blender_executable, addon_directory):
     """
     Builds the add-on package into a .zip file using Blender's command-line tool.
     """
-    output_zip = os.path.join(addon_directory, 'physics_export.zip')
+    output_zip = os.path.join(addon_directory, 'polyfem.zip')
     print("Building the add-on package...")
     command = [
         blender_executable,

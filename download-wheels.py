@@ -13,7 +13,7 @@ packages = {
 }
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-wheels_dir = os.path.join(script_dir, 'physics_export/wheels')
+wheels_dir = os.path.join(script_dir, 'polyfem/wheels')
 
 if not os.path.exists(wheels_dir):
     os.makedirs(wheels_dir)
