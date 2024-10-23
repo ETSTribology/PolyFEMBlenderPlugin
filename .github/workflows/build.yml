@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  pull_request:
+    branches: [ '**' ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version of the release in format X.Y.Z'
+        required: true
+        default: '1.0.10'
+      release_stage:
+        description: 'Stage of the release (alpha, beta, rc)'
+        required: true
+        default: 'alpha'
+
+permissions:
+  contents: write
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Build the Blender add-on
+      - name: Build Addon
+        uses: blenderkit/blender-addon-build@main
+        with:
+          name: physics_export
+          exclude-files: ".git;.github;README.md"
+
+  Release:
+    runs-on: ubuntu-latest
+    needs: Build
+
+    steps:
+      - name: Release Addon
+        uses: blenderkit/blender-addon-release@main
+        with:
+          artifact_name: physics_export
+          release_name: Physics Export Addon
+          version: ${{ github.event.inputs.version }}
+          release_stage: ${{ github.event.inputs.release_stage }}
