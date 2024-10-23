@@ -50,7 +50,11 @@ To install the Blender Plugin Simulation to JSON:
 
 ## Requirements
 
-This plugin requires the following Python packages:
+In addition to Python dependencies, this plugin requires **Docker Desktop** for running `TetWild` and `PolyFem` simulations. Ensure that **Docker Desktop** is installed and running on your system.
+
+### Python Packages
+
+The following Python packages are required:
 
 ```plaintext
 tetgen==0.6.5
@@ -64,6 +68,35 @@ rich==13.9.1
 ```
 
 Ensure Python 3.11 is installed. While the plugin manages dependencies automatically, developers may need to install these manually using `pip` if modifying the plugin.
+
+### Docker Images
+
+In addition to the Python dependencies, this plugin relies on Docker for running external simulations:
+
+- **TetWild**: Used for mesh generation and refinement.
+  - Docker Image: `yixinhu/tetwild:latest`
+
+- **PolyFem**: Used for running simulations.
+  - Docker Image: `antoinebou12/polyfem:latest`
+
+### Steps to Install Docker and Pull Required Images
+
+1. **Install Docker Desktop**:
+   - Download and install Docker Desktop from [here](https://www.docker.com/products/docker-desktop/).
+   - Ensure Docker is running and configured to access your local file system.
+
+2. **Pull Docker Images**:
+   - Open a terminal and run the following commands to pull the required Docker images:
+     ```bash
+     docker pull yixinhu/tetwild:latest
+     docker pull antoinebou12/polyfem:latest
+     ```
+
+3. **Verify Docker Setup**:
+   - Ensure Docker is working correctly by running:
+     ```bash
+     docker --version
+     ```
 
 ---
 
