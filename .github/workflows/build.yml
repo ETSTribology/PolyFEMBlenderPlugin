@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+        - 'polyfem/**'
+        - '.github/**'
   workflow_dispatch:
     inputs:
       release_stage:
@@ -61,6 +64,7 @@ jobs:
         run: |
           mkdir -p docs
           blender --command extension build --source-dir polyfem --output-dir docs
+          blender --command extension server-generate --repo-dir=docs --html
 
       - name: Upload Blender Add-on ZIP
         uses: actions/upload-artifact@v3
@@ -68,9 +72,17 @@ jobs:
           name: polyfem-${{ matrix.version }}
           path: docs/polyfem-${{ matrix.version }}.zip
 
-      - name: Touch .nojekyll
-        run: |
-          touch docs/.nojekyll
+      - name: Upload index.json
+        uses: actions/upload-artifact@v3
+        with:
+          name: index.json
+          path: docs/index.json
+
+      - name: Upload html.json
+        uses: actions/upload-artifact@v3
+        with:
+          name: html.json
+          path: docs/html.json
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4.4.1
