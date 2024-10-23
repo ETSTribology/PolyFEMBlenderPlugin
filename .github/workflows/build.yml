@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Test
 
 on:
   push:
@@ -15,42 +15,46 @@ permissions:
   contents: write
 
 jobs:
-  Build_Addon:
+  Generate_Matrix:
     runs-on: ubuntu-latest
+
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Blender
+      - name: Generate Tests Matrix
+        id: set-matrix
         run: |
-          sudo apt-get update
-          sudo apt-get install blender
+          python .github/make-tests-matrix.py >> $GITHUB_OUTPUT
 
-      - name: Set Up Python
-        uses: actions/setup-python@v4
+  Test_Addon:
+    needs: Generate_Matrix
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix: ${{ fromJSON(needs.Generate_Matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Blender
+        run: |
+          curl -L ${{ matrix.download_url }} -o blender.tar.xz
+          tar -xf blender.tar.xz --strip-components=1 -C /home/runner/blender
+
+      - name: Add Blender to PATH
+        run: echo "/home/runner/blender" >> $GITHUB_PATH
+
+      - name: Run Addon Tests
+        run: |
+          blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/physics_export-v${{ matrix.version }}.zip')"
+      
+      - name: Upload Blender Add-on ZIP
+        uses: actions/upload-artifact@v3
         with:
-          python-version: '3.11'
-
-      - name: Install Dependencies
-        run: pip install -r polyfem/requirements.txt
-
-      - name: Extract version from blender_manifest.toml
-        id: get_version
-        run: |
-          version=$(sed -n 's/^version = "\(.*\)"/\1/p' polyfem/blender_manifest.toml)
-          echo "VERSION=$version" >> $GITHUB_ENV
-
-      - name: Build Addon with Blender
-        run: |
-          blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/physics_export-v${{ env.VERSION }}.zip')"
-
-      - name: Generate Static Repository JSON
-        run: |
-          blender --background --command extension server-generate --repo-dir=docs
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          name: PolyFemBlenderPlugin-${{ matrix.version }}
+          path: docs/physics_export-v${{ matrix.version }}.zip
