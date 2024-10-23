@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build and Deploy Add-on
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
         run: |
           python .github/make-tests-matrix.py >> $GITHUB_OUTPUT
 
-  Test_Addon_With_Cache:
+  Build_Addon_And_Deploy:
     needs: Generate_Matrix
     runs-on: ubuntu-latest
 
@@ -57,12 +57,30 @@ jobs:
       - name: Add Blender to PATH
         run: echo "/home/runner/blender" >> $GITHUB_PATH
 
-      - name: Run Addon Tests
+      - name: Build Addon and Place in Docs
         run: |
-          blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/physics_export-v${{ matrix.version }}.zip')"
-      
+          mkdir -p docs
+          blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/polyfem-v${{ matrix.version }}.zip')"
+
+      - name: Generate Static Repository with HTML
+        run: |
+          blender --background --command extension server-generate --repo-dir=docs --html
+
       - name: Upload Blender Add-on ZIP
         uses: actions/upload-artifact@v3
         with:
-          name: PolyFemBlenderPlugin-${{ matrix.version }}
-          path: docs/physics_export-v${{ matrix.version }}.zip
+          name: polyfem-${{ matrix.version }}
+          path: docs/polyfem-v${{ matrix.version }}.zip
+
+      - name: Touch .nojekyll
+        run: |
+          cd site
+          touch .nojekyll
+          cd ..
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4.4.1
+        with:
+          branch: gh-pages
+          folder: site
+          clean: true
