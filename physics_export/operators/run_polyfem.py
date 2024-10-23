@@ -151,18 +151,13 @@ class RunPolyFemSimulationOperator(Operator):
 
             if error_messages:
                 # Show error popup with all error messages
-                bpy.ops.polyfem.show_message_box(
-                    message="\n".join(error_messages),
-                    title="PolyFem Simulation Failed",
-                    icon='ERROR'
-                )
+                bpy.app.timers.register(lambda: self.show_popup("\n".join(error_messages), "Simulation Failed", 'ERROR'))
             elif info_messages:
                 # Show success popup
-                bpy.ops.polyfem.show_message_box(
-                    message="PolyFem simulation completed successfully.",
-                    title="PolyFem Simulation Complete",
-                    icon='INFO'
-                )
+                bpy.app.timers.register(lambda: self.show_popup("Simulation completed successfully!", "Simulation Complete", 'INFO'))
+            elif warning_messages:
+                # Show warning popup
+                bpy.app.timers.register(lambda: self.show_popup("Simulation completed with warnings.", "Simulation Complete", 'WARNING'))
 
             # Unregister the timer
             return None
@@ -690,6 +685,11 @@ class RenderPolyFemAnimationOperator(Operator):
             triangles.append([quad[0], quad[2], quad[3]])
         return triangles
 
+    def show_popup(self, message, title, icon):
+        """Helper function to display a popup message box"""
+        bpy.ops.polyfem.show_message_box('INVOKE_DEFAULT', message=message, title=title, icon=icon)
+
+
 # Open PolyFem Documentation Operator
 class OpenPolyFemDocsOperator(Operator):
     """Open PolyFem documentation in a browser"""
@@ -702,7 +702,6 @@ class OpenPolyFemDocsOperator(Operator):
         webbrowser.open("https://polyfem.github.io/json_defaults_and_spec/?h=json+s")
         self.report({'INFO'}, "Opened PolyFem documentation in your default web browser.")
         return {'FINISHED'}
-    
 
 # Clear Cache Operator
 class ClearCachePolyFemOperator(Operator):

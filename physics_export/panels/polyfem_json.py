@@ -7,11 +7,25 @@ class PolyFEMJSONConfigPanel(Panel):
     bl_idname = "VIEW3D_PT_polyfem_json_config"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'PolyFEM'
+    bl_category = 'PolyFEM Config'
 
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.polyfem_settings
+        settings = context.scene.polyfem_json_settings
+
+        # Display the properties
+        layout.prop(settings, 'export_path')
+        layout.prop(settings, 'json_filename')
+        layout.prop(settings, 'export_format')
+        layout.prop(settings, 'export_stl')
+        layout.prop(settings, 'export_selected_only')
+        layout.prop(settings, 'export_point_selection')
+
+        # Operator button
+        layout.operator("physics_export.export_physics", text="Export Physics to JSON")
+
+        if settings.export_selected_only and not context.selected_objects:
+            layout.label(text="No objects selected.", icon='ERROR')
 
         # Project Path
         layout.label(text="Project Settings", icon='FILE_FOLDER')

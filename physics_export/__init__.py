@@ -14,40 +14,33 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 # Import classes from submodules using relative imports
-from .export.physics_exporter import ExportPhysics
 from .properties.polyfem import PolyFemSettings
-from .properties.export import ExportPhysicsSettings
 from .properties.heightmap import HeightmapSettings
 from .operators.heightmap import ApplyHeightmapOperator
-from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator
+from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator,  POLYFEM_OT_ShowMessageBox
 from .operators.create_polyfem_json import CreatePolyFemJSONOperator
 from .operators.convert_normal_to_displacement import ConvertNormalToDisplacementOperator
 from .panels.heightmap import HeightmapPanel
 from .panels.poly_fem import PolyFemPanel
-from .panels.polyfem_json import PolyFemJSONPanel
-from .panels.physics import ExtractPhysicsPanel
+from .panels.polyfem_json import PolyFEMJSONConfigPanel
 from .properties.physics_export_addon import PhysicsExportAddonPreferences
-from .properties.polyfem_json import PolyFemJSONSettings
+from .properties.polyfem_json import PolyFEMJSONSettings
 
 # List of all classes to register/unregister
 classes = [
     # PropertyGroups
-    ExportPhysicsSettings,
     HeightmapSettings,
     PolyFemSettings,
-    PolyFemJSONSettings,
+    PolyFEMJSONSettings,
 
     # AddonPreferences
     PhysicsExportAddonPreferences,
 
     # Panels
-    ExtractPhysicsPanel,
     HeightmapPanel,
     PolyFemPanel,
-    PolyFemJSONPanel,
+    PolyFEMJSONConfigPanel,
 
-    # Exporters
-    ExportPhysics,
 
     # Operators
     ApplyHeightmapOperator,
@@ -57,6 +50,9 @@ classes = [
     OpenPolyFemDocsOperator,
     ClearCachePolyFemOperator,
     CreatePolyFemJSONOperator,
+
+    # ShowMessageBox
+    POLYFEM_OT_ShowMessageBox
 ]
 
 bl_info = {
@@ -90,9 +86,9 @@ def register():
             bpy.utils.register_class(cls)  # Then register the class
 
         # Register PointerProperties
-        bpy.types.Scene.export_physics_settings = bpy.props.PointerProperty(type=ExportPhysicsSettings)
         bpy.types.Scene.heightmap_settings = bpy.props.PointerProperty(type=HeightmapSettings)
         bpy.types.Scene.polyfem_settings = bpy.props.PointerProperty(type=PolyFemSettings)
+        bpy.types.Scene.polyfem_json_settings = bpy.props.PointerProperty(type=PolyFEMJSONSettings)
 
         logger.info(f"{bl_info.get('name', 'Addon')} v{bl_info.get('version', '0.0')} registered successfully.")
 
@@ -110,12 +106,12 @@ def unregister():
     }
     try:
         # Unregister PointerProperties first to avoid dependency issues
-        if hasattr(bpy.types.Scene, "export_physics_settings"):
-            del bpy.types.Scene.export_physics_settings
         if hasattr(bpy.types.Scene, "heightmap_settings"):
             del bpy.types.Scene.heightmap_settings
         if hasattr(bpy.types.Scene, "polyfem_settings"):
             del bpy.types.Scene.polyfem_settings
+        if hasattr(bpy.types.Scene, "polyfem_json_settings"):
+            del bpy.types.Scene.polyfem_json_settings
 
         # Unregister classes in reverse order to handle dependencies correctly
         for cls in reversed(classes):
