@@ -1,0 +1,35 @@
+{
+  "version": "v1",
+  "blocklist": [],
+  "data": [
+    {
+      "schema_version": "1.0.0",
+      "id": "polyfem",
+      "name": "PolyFem",
+      "tagline": "PolyFEM simulation plugin for Blender",
+      "version": "1.0.10",
+      "type": "add-on",
+      "maintainer": "Antoine Boucher <antoine@antoineboucher.info>",
+      "license": [
+        "MIT"
+      ],
+      "blender_version_min": "4.2.0",
+      "website": "https://github.com/ETSTribology/PolyFEMBlenderPlugin",
+      "permissions": {
+        "files": "Required for reading and writing files during export",
+        "network": "Required for accessing online resources or services"
+      },
+      "tags": [
+        "Object",
+        "Physics",
+        "Import-Export"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "archive_url": "./polyfem-1.0.10.zip",
+      "archive_size": 26540,
+      "archive_hash": "sha256:c5ad36b1d639bc2acbbfb153c2260b54ec3bfc2623d59232effd1f82654529f3"
+    }
+  ]
+}
