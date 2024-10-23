@@ -57,7 +57,7 @@ jobs:
       - name: Add Blender to PATH
         run: echo "/home/runner/blender" >> $GITHUB_PATH
 
-      - name: Build Addon and Place in Docs
+      - name: Build Addon and Move to Docs
         run: |
           mkdir -p docs
           blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/polyfem-v${{ matrix.version }}.zip')"
@@ -74,13 +74,11 @@ jobs:
 
       - name: Touch .nojekyll
         run: |
-          cd site
-          touch .nojekyll
-          cd ..
+          touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4.4.1
         with:
           branch: gh-pages
-          folder: site
+          folder: docs
           clean: true
