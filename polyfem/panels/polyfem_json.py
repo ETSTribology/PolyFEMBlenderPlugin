@@ -22,7 +22,6 @@ class PolyFEMPanel(Panel):
         box.prop(settings, 'export_stl')
         box.prop(settings, 'export_selected_only')
         box.prop(settings, 'export_point_selection')
-        box.operator("physics_export.export_physics", text="Export Physics to JSON")
 
         if settings.export_selected_only and not context.selected_objects:
             box.label(text="No objects selected.", icon='ERROR')
