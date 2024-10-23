@@ -1,6 +1,12 @@
 # Blender Plugin Simulation to JSON
 
-This is an experimental Blender add-on developed for **ETS Lab**. It allows users to extract objects and their physics constraints from Blender and export them to JSON format, as well as run **PolyFem** simulations directly from Blender. 
+[![Blender](https://img.shields.io/badge/Blender-4.20%2B-orange)](https://www.blender.org/)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6ffbb6b533d044d590498fb4d730999b)](https://app.codacy.com/)
+[![Release](https://img.shields.io/github/v/release/ETSTribology/BlenderPluginSimulation)](https://github.com/ETSTribology/BlenderPluginSimulation/releases)
+[![License](https://img.shields.io/github/license/ETSTribology/BlenderPluginSimulation)](./LICENSE)
+[![PolyFem](https://img.shields.io/badge/PolyFem-Compatible-blue)](https://polyfem.github.io/)
+
+This is an experimental Blender add-on developed for **ETS Lab**. It allows users to extract objects and their physics constraints from Blender and export them to JSON format, as well as run **PolyFem** simulations directly from Blender.
 
 > **Note**: This plugin has been tested with Blender **4.2** and may not be compatible with earlier versions.
 
@@ -15,15 +21,16 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [File Structure](#file-structure)
-3. [Usage](#usage)
+2. [Requirements](#requirements)
+3. [File Structure](#file-structure)
+4. [Usage](#usage)
     - [Enabling the Add-on](#enabling-the-add-on)
     - [Running Simulations](#running-simulations)
     - [Exporting Physics](#exporting-physics)
-4. [Known Issues](#known-issues)
-5. [Roadmap](#roadmap)
-6. [Contributing](#contributing)
-7. [License](#license)
+5. [Known Issues](#known-issues)
+6. [Roadmap](#roadmap)
+7. [Contributing](#contributing)
+8. [License](#license)
 
 ---
 
@@ -41,6 +48,25 @@ To install the Blender Plugin Simulation to JSON, follow these steps:
 
 3. **Activate the plugin**:
    - After installation, search for `BlenderPluginSimulation` in the add-on preferences and activate it by clicking the checkbox.
+
+---
+
+## Requirements
+
+The following Python packages are required for this plugin:
+
+```plaintext
+tetgen==0.6.5
+scipy==1.14.1
+meshio==5.3.5
+sympy==1.13.3
+numpy==2.1.2
+trimesh==4.4.9
+noise==1.2.2
+rich==13.9.1
+```
+
+Ensure you have Python 3.11 installed. These dependencies are automatically managed within the plugin, but if you are developing or modifying the plugin, you may need to install them manually using `pip`.
 
 ---
 
@@ -133,6 +159,7 @@ This project is licensed under the **GNU General Public License v3.0**. See the 
 - [Blender Add-on Development Tutorial](https://docs.blender.org/manual/en/latest/advanced/scripting/addon_tutorial.html)
 - [Blender Extensions](https://docs.blender.org/manual/en/latest/advanced/extensions/index.html)
 - [Getting Started with Add-ons](https://docs.blender.org/manual/en/latest/advanced/extensions/getting_started.html)
+- [PolyFem GitHub Repository](https://github.com/polyfem/polyfem)
 
 ---
 
