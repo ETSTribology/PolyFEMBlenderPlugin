@@ -1,4 +1,8 @@
-# Blender Plugin Simulation to JSON
+# Blender Plugin for PolyFEM
+
+<h1 align="center">
+<a href="https://polyfem.github.io/"><img alt="polyfem" src="https://polyfem.github.io/img/polyfem.png" width="60%"></a>
+</h1><br>
 
 [![Blender](https://img.shields.io/badge/Blender-4.20%2B-orange)](https://www.blender.org/)
 [![Release](https://img.shields.io/github/v/release/ETSTribology/BlenderPluginSimulation)](https://github.com/ETSTribology/BlenderPluginSimulation/releases)
@@ -40,7 +44,6 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
 
 To install the Blender Plugin Simulation to JSON, follow these steps:
 
-
 1. **Zip the `polyfem` directory**:
    - Navigate to the plugin directory and zip the entire `polyfem` folder. This folder contains the core files required for the plugin to function.
    - https://etstribology.github.io/PolyFEMBlenderPlugin/index.html
@@ -55,10 +58,42 @@ To install the Blender Plugin Simulation to JSON, follow these steps:
    - After installation, search for `PolyFEM` in the add-on preferences and activate it by clicking the checkbox.
    ![image](https://github.com/user-attachments/assets/05305448-2c0d-4cbb-8d54-e1ad906be1d7)
 
-
 ---
 
 ## Requirements
+
+In addition to Python dependencies, this plugin requires **Docker Desktop** for running `TetWild` and `PolyFem` simulations. Ensure that **Docker Desktop** is installed and running on your system.
+
+### Docker Images:
+
+- **TetWild**: Used for mesh generation and refinement.
+  - Image: `yixinhu/tetwild:latest`
+  
+- **PolyFem**: Used for running simulations.
+  - Image: `antoinebou12/polyfem:latest`
+
+### Steps to Install Docker and Pull Required Images:
+
+1. **Install Docker Desktop**:
+   - Download and install Docker Desktop from [here](https://www.docker.com/products/docker-desktop/).
+   - Make sure Docker is running and has access to your local file system.
+
+2. **Pull Docker Images**:
+   - Open a terminal and run the following commands to pull the required Docker images:
+     ```bash
+     docker pull yixinhu/tetwild:latest
+     docker pull antoinebou12/polyfem:latest
+     ```
+
+3. **Verify Docker Setup**:
+   - Ensure that Docker is working correctly by running:
+     ```bash
+     docker --version
+     ```
+
+---
+
+### Python Dependencies
 
 The following Python packages are required for this plugin:
 
