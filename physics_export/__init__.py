@@ -53,32 +53,28 @@ def display_message(message):
     bpy.context.window_manager.popup_menu(draw, title="PolyFem Packages Error", icon='ERROR')
 
 # Import classes from submodules using relative imports
-from .properties.polyfem import PolyFemSettings
 from .properties.heightmap import HeightmapSettings
 from .operators.heightmap import ApplyHeightmapOperator
 from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator,  POLYFEM_OT_ShowMessageBox
 from .operators.create_polyfem_json import CreatePolyFemJSONOperator
 from .operators.convert_normal_to_displacement import ConvertNormalToDisplacementOperator
 from .panels.heightmap import HeightmapPanel
-from .panels.poly_fem import PolyFemPanel
-from .panels.polyfem_json import PolyFEMJSONConfigPanel
+from .panels.polyfem_json import PolyFEMPanel
 from .properties.physics_export_addon import PhysicsExportAddonPreferences
-from .properties.polyfem_json import PolyFEMJSONSettings
+from .properties.polyfem import PolyFEMSettings
 
 # List of all classes to register/unregister
 classes = [
     # PropertyGroups
     HeightmapSettings,
-    PolyFemSettings,
-    PolyFEMJSONSettings,
+    PolyFEMSettings,
 
     # AddonPreferences
     PhysicsExportAddonPreferences,
 
     # Panels
     HeightmapPanel,
-    PolyFemPanel,
-    PolyFEMJSONConfigPanel,
+    PolyFEMPanel,
 
 
     # Operators
@@ -129,8 +125,7 @@ def register():
 
         # Register PointerProperties
         bpy.types.Scene.heightmap_settings = bpy.props.PointerProperty(type=HeightmapSettings)
-        bpy.types.Scene.polyfem_settings = bpy.props.PointerProperty(type=PolyFemSettings)
-        bpy.types.Scene.polyfem_json_settings = bpy.props.PointerProperty(type=PolyFEMJSONSettings)
+        bpy.types.Scene.polyfem_settings = bpy.props.PointerProperty(type=PolyFEMSettings)
 
         logger.info(f"{bl_info.get('name', 'Addon')} v{bl_info.get('version', '0.0')} registered successfully.")
 
@@ -152,8 +147,6 @@ def unregister():
             del bpy.types.Scene.heightmap_settings
         if hasattr(bpy.types.Scene, "polyfem_settings"):
             del bpy.types.Scene.polyfem_settings
-        if hasattr(bpy.types.Scene, "polyfem_json_settings"):
-            del bpy.types.Scene.polyfem_json_settings
 
         # Unregister classes in reverse order to handle dependencies correctly
         for cls in reversed(classes):

@@ -1,9 +1,9 @@
 schema_version = "1.0.0"
 
-id = "physics_export"
+id = "polyfem"
 version = "1.0.10"
-name = "PolyFem Blender Plugin"
-tagline = "Exports objects and physics constraints to JSON"
+name = "PolyFem"
+tagline = "Exports objects and physics constraints to PolyFem"
 maintainer = "Antoine Boucher <antoine@antoineboucher.info>"
 type = "add-on"
 
@@ -13,7 +13,7 @@ license = [
   "GPL-3.0-or-later"
 ]
 
-website = "https://github.com/ETSTribology/BlenderPluginSimulation"
+website = "https://github.com/ETSTribology/PolyFEMBlenderPlugin"
 tags = ["Object", "Physics", "Import-Export"]
 platforms = ["windows-x64"]
 

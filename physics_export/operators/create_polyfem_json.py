@@ -16,7 +16,7 @@ class CreatePolyFemJSONOperator(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        settings = context.scene.polyfem_settings_json
+        settings = context.scene.polyfem_settings
         project_path = bpy.path.abspath(settings.export_path)
         json_filename = settings.json_filename
         json_path = os.path.join(project_path, json_filename)
