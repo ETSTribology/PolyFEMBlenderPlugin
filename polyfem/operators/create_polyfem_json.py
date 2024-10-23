@@ -4,6 +4,7 @@ import os
 import subprocess
 import bmesh
 import math
+import platform
 from mathutils import Vector
 from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty, IntProperty
 from bpy.types import Operator
@@ -267,9 +268,20 @@ class CreatePolyFemJSONOperator(Operator):
 
     def run_tetwild(self, input_file, output_file, ideal_edge_length=0.05, epsilon=1e-3, filter_energy=10, max_pass=80):
         """Run TetWild via Docker to generate an MSH file from a mesh."""
-        # Normalize paths to avoid issues with backslashes in Windows
-        input_file = input_file.replace("\\", "/")
-        output_file = output_file.replace("\\", "/")
+        # Get the absolute path of the input and output directories
+        input_dir = os.path.abspath(os.path.dirname(input_file))
+        output_dir = os.path.abspath(os.path.dirname(output_file))
+
+        # Check the platform and adjust paths for Windows
+        if platform.system() == 'Windows':
+            # Convert Windows paths to a format Docker can understand (Unix-style paths)
+            input_dir = input_dir.replace('\\', '/')
+            output_dir = output_dir.replace('\\', '/')
+            # Docker on Windows typically uses paths like `/c/Users/...` instead of `C:/Users/...`
+            if input_dir[1] == ':':  # Detects drive letter, e.g., C:
+                input_dir = f'/{input_dir[0].lower()}{input_dir[2:]}'
+            if output_dir[1] == ':':  # Detects drive letter, e.g., C:
+                output_dir = f'/{output_dir[0].lower()}{output_dir[2:]}'
 
         # Build the command string with the required parameters
         command = [
@@ -291,10 +303,10 @@ class CreatePolyFemJSONOperator(Operator):
             print(result.stdout)
             return True
         except FileNotFoundError:
-            self.report({'ERROR'}, "Docker not found. Please ensure Docker is installed and in your system's PATH.")
+            print("Error: Docker not found. Please ensure Docker is installed and in your system's PATH.")
             return False
         except subprocess.CalledProcessError as e:
-            self.report({'ERROR'}, f"Error running TetWild: {e}")
+            print(f"Error running TetWild: {e}")
             print(f"Standard Output: {e.stdout}")
             print(f"Standard Error: {e.stderr}")
             return False

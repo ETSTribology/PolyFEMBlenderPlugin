@@ -10,6 +10,7 @@ import concurrent.futures
 import queue
 import sys
 import os
+import platform
 
 # ----------------------------
 # Popup Message Box Operator
@@ -87,43 +88,56 @@ class RunPolyFemSimulationOperator(Operator):
 
     def run_polyfem_simulation(self, context):
         """Run the PolyFem simulation using Docker with the provided JSON config"""
-        import sys
+
+        # Retrieve settings from the scene's PolyFem configuration
         polyfem_settings = context.scene.polyfem_settings
         json_input = bpy.path.abspath(polyfem_settings.polyfem_json_input)
         project_path = bpy.path.abspath(polyfem_settings.project_path)
 
+        # Check if the JSON input file exists
         if not os.path.isfile(json_input):
             self.report_queue.put(('ERROR', f"PolyFem JSON input file '{json_input}' not found."))
             return
 
         # Adjust paths for Docker on Windows
-        if sys.platform.startswith('win'):
-            # Convert backslashes to forward slashes
+        if platform.system() == 'Windows':
+            # Convert backslashes to forward slashes for Docker
             project_path = project_path.replace('\\', '/')
             json_input = json_input.replace('\\', '/')
 
-            # Remove colon from drive letter and prefix with '/'
+            # Convert drive letters (e.g., C:) to Unix-like format for Docker (e.g., /c/)
             if ':' in project_path:
                 drive, rest = project_path.split(':', 1)
-                project_path = f'/{drive}{rest}'
+                project_path = f'/{drive.lower()}{rest}'
             if ':' in json_input:
                 drive, rest = json_input.split(':', 1)
-                json_input = f'/{drive}{rest}'
+                json_input = f'/{drive.lower()}{rest}'
 
-        # Remove shell=True and build the command as a list for security
+        # Build the Docker command as a list to avoid shell=True for security reasons
+        command = [
+            'docker', 'run', '--rm',
+            '-v', f'{project_path}:/data',  # Mount project path as /data in the container
+            'antoinebou12/polyfem',  # Docker image
+            '--json', f'/data/{os.path.basename(json_input)}'  # Use the JSON file in the container
+        ]
+
+        # Try to run the PolyFem simulation using Docker
         try:
             result = subprocess.run(
-                ['docker', 'run', '--rm', '-v', f'{project_path}:/data', 'antoinebou12/polyfem', '--json', f'/data/{os.path.basename(json_input)}'],
+                command,
                 capture_output=True,
                 text=True,
                 check=True
             )
+            # Report the output of the Docker command
             self.report_queue.put(('INFO', f"PolyFem Docker Output:\n{result.stdout}"))
             if result.stderr:
                 self.report_queue.put(('WARNING', f"PolyFem Docker Warnings:\n{result.stderr}"))
             self.report_queue.put(('INFO', "PolyFem simulation completed successfully."))
         except subprocess.CalledProcessError as e:
             self.report_queue.put(('ERROR', f"PolyFem Docker simulation failed:\n{e.stderr}"))
+        except FileNotFoundError:
+            self.report_queue.put(('ERROR', "Docker not found. Please ensure Docker is installed and in your system's PATH."))
         except Exception as e:
             self.report_queue.put(('ERROR', f"An unexpected error occurred while running PolyFem in Docker:\n{e}"))
 

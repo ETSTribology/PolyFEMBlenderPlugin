@@ -14,7 +14,6 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
 - Export objects and their physics constraints to **JSON**.
 - Supports exporting meshes in **STL** and **MSH** formats.
 - Directly run **PolyFem** simulations from Blender.
-- Apply **heightmaps** to selected mesh faces.
 - Easy-to-use UI integrated into Blender's sidebar.
 
 ## Table of Contents
@@ -74,19 +73,10 @@ Ensure you have Python 3.11 installed. These dependencies are automatically mana
 ```
 polyfem/
 ├── __init__.py                            # Main entry point for the plugin
-├── export/
-│   ├── physics_exporter.py                # Handles exporting objects and physics constraints
 ├── operators/
-│   ├── heightmap.py              # Applies heightmaps to mesh faces
-│   ├── run_polyfem.py            # Runs PolyFem simulations
-│   ├── open_docs.py              # Opens PolyFem documentation in a browser
 ├── panels/
-│   ├── heightmap.py                 # UI panel for heightmap generator
 │   ├── poly_fem.py                  # UI panel for PolyFem simulation
-│   ├── physics.py                   # UI panel for exporting physics data
 ├── properties/
-│   ├── export.py               # Stores export-related settings
-│   ├── heightmap.py            # Stores heightmap settings
 │   ├── polyfem.py                # Stores PolyFem simulation settings
 │   ├── physics_export_addon.py # Stores add-on preferences
 ```
@@ -101,11 +91,10 @@ Once the add-on is installed and activated, you will find a new sidebar panel in
 
 - **Physics**: For exporting physics constraints and mesh data.
 - **PolyFem**: For configuring and running PolyFem simulations.
-- **Heightmap**: For applying heightmaps to selected mesh faces.
 
 To view these panels:
 - Press `N` to open the sidebar.
-- Navigate to the relevant tab (Physics, PolyFem, or Heightmap).
+- Navigate to the relevant tab (PolyFem).
 
 ### Running Simulations
 
@@ -122,19 +111,17 @@ To view these panels:
 ### Exporting Physics
 
 1. **Set Export Options**:
-   - In the **Physics** panel, set the output directory, JSON filename, and choose the desired export format (STL, MSH).
+   - In the **PolyFem** panel, set the output directory, JSON filename, and choose the desired export format (STL, MSH).
 
 2. **Select Objects** (Optional):
    - If you want to export only specific objects, select them in the viewport and enable **Export Selected Only**.
 
 3. **Export to JSON**:
-   - Click **Export Physics to JSON** to generate a JSON file containing the object's physics constraints and other properties.
+   - Click **Create PolyFEM JSON** to generate a JSON file containing the object's physics constraints and other properties.
 
 ---
 
 ## Known Issues
-
-- **Output Directory**: If the output directory is not specified, the **Export Physics to JSON** button may crash Blender. Ensure the output directory is set before exporting.
 
 ---
 
@@ -165,6 +152,6 @@ This project is licensed under the **GNU General Public License v3.0**. See the 
 ### Authors
 
 - **Antoine Boucher** - Lead Developer and Maintainer
-- ETS Lab
+- [ETS Lab](https://www.etsmtl.ca/en/research/chairs-and-labs/lab-multimedia)
 
 For any questions or issues, feel free to reach out or submit an issue on the [GitHub Repository](https://github.com/ETSTribology/BlenderPluginSimulation).

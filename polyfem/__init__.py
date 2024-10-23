@@ -74,12 +74,9 @@ def pull_docker_images():
     threading.Thread(target=pull_images, daemon=True).start()
 
 # Import classes from submodules using relative imports
-from .properties.heightmap import HeightmapSettings
-from .operators.heightmap import ApplyHeightmapOperator
 from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator, POLYFEM_OT_ShowMessageBox
 from .operators.create_polyfem_json import CreatePolyFemJSONOperator
 from .operators.convert_normal_to_displacement import ConvertNormalToDisplacementOperator
-from .panels.heightmap import HeightmapPanel
 from .panels.polyfem_json import PolyFEMPanel
 from .properties.physics_export_addon import PhysicsExportAddonPreferences
 from .properties.polyfem import PolyFEMSettings
@@ -87,18 +84,15 @@ from .properties.polyfem import PolyFEMSettings
 # List of all classes to register/unregister
 classes = [
     # PropertyGroups
-    HeightmapSettings,
     PolyFEMSettings,
 
     # AddonPreferences
     PhysicsExportAddonPreferences,
 
     # Panels
-    HeightmapPanel,
     PolyFEMPanel,
 
     # Operators
-    ApplyHeightmapOperator,
     ConvertNormalToDisplacementOperator,
     RunPolyFemSimulationOperator,
     RenderPolyFemAnimationOperator,
@@ -145,7 +139,6 @@ def register():
             bpy.utils.register_class(cls)  # Then register the class
 
         # Register PointerProperties
-        bpy.types.Scene.heightmap_settings = bpy.props.PointerProperty(type=HeightmapSettings)
         bpy.types.Scene.polyfem_settings = bpy.props.PointerProperty(type=PolyFEMSettings)
 
         # Check if Docker is installed
@@ -170,8 +163,6 @@ def unregister():
     }
     try:
         # Unregister PointerProperties first to avoid dependency issues
-        if hasattr(bpy.types.Scene, "heightmap_settings"):
-            del bpy.types.Scene.heightmap_settings
         if hasattr(bpy.types.Scene, "polyfem_settings"):
             del bpy.types.Scene.polyfem_settings
 
