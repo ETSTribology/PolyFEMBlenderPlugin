@@ -30,7 +30,7 @@ jobs:
         run: |
           python .github/make-tests-matrix.py >> $GITHUB_OUTPUT
 
-  Build_Addon_And_Deploy:
+  build:
     needs: Generate_Matrix
     runs-on: ubuntu-latest
 
@@ -60,17 +60,13 @@ jobs:
       - name: Build Addon and Move to Docs
         run: |
           mkdir -p docs
-          blender --background --python-expr "import bpy; bpy.ops.preferences.extension_build(directory='polyfem/', filepath='docs/polyfem-v${{ matrix.version }}.zip')"
-
-      - name: Generate Static Repository with HTML
-        run: |
-          blender --background --command extension server-generate --repo-dir=docs --html
+          blender --command extension build --source-dir polyfem --output-dir docs
 
       - name: Upload Blender Add-on ZIP
         uses: actions/upload-artifact@v3
         with:
           name: polyfem-${{ matrix.version }}
-          path: docs/polyfem-v${{ matrix.version }}.zip
+          path: docs/polyfem-${{ matrix.version }}.zip
 
       - name: Touch .nojekyll
         run: |
