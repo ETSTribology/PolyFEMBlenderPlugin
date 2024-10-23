@@ -1,7 +1,7 @@
 import bpy
 import os
 import subprocess
-from .._vendor import meshio
+import meshio
 from bpy.types import Operator, PropertyGroup
 import webbrowser
 import tempfile
