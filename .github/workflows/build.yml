@@ -30,7 +30,7 @@ jobs:
         run: |
           python .github/make-tests-matrix.py >> $GITHUB_OUTPUT
 
-  Test_Addon:
+  Test_Addon_With_Cache:
     needs: Generate_Matrix
     runs-on: ubuntu-latest
 
@@ -41,9 +41,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Cache Blender Binary
+        uses: actions/cache@v3
+        with:
+          path: /home/runner/blender
+          key: blender-${{ matrix.version }}-${{ matrix.sha }}
+
       - name: Download Blender
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           curl -L ${{ matrix.download_url }} -o blender.tar.xz
+          mkdir -p /home/runner/blender
           tar -xf blender.tar.xz --strip-components=1 -C /home/runner/blender
 
       - name: Add Blender to PATH
