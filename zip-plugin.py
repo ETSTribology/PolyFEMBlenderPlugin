@@ -68,6 +68,7 @@ def zip_plugin():
         print(f"An error occurred during zipping: {e}")
         if os.path.exists(zip_filename):
             os.remove(zip_filename)
-        return
+        exit(1)
 
-zip_plugin()
+if __name__ == "__main__":
+    zip_plugin()
