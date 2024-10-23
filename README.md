@@ -1,7 +1,6 @@
 # Blender Plugin Simulation to JSON
 
 [![Blender](https://img.shields.io/badge/Blender-4.20%2B-orange)](https://www.blender.org/)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6ffbb6b533d044d590498fb4d730999b)](https://app.codacy.com/)
 [![Release](https://img.shields.io/github/v/release/ETSTribology/BlenderPluginSimulation)](https://github.com/ETSTribology/BlenderPluginSimulation/releases)
 [![License](https://img.shields.io/github/license/ETSTribology/BlenderPluginSimulation)](./LICENSE)
 [![PolyFem](https://img.shields.io/badge/PolyFem-Compatible-blue)](https://polyfem.github.io/)
