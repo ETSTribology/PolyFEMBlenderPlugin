@@ -1,4 +1,7 @@
-# Blender Plugin Simulation to JSON
+# Blender Plugin for PolyFEM
+
+![image](https://github.com/user-attachments/assets/919ffa16-039b-4a6d-822e-faf9c207ad67)
+
 
 [![Blender](https://img.shields.io/badge/Blender-4.20%2B-orange)](https://www.blender.org/)
 [![Release](https://img.shields.io/github/v/release/ETSTribology/BlenderPluginSimulation)](https://github.com/ETSTribology/BlenderPluginSimulation/releases)
@@ -16,10 +19,12 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
 - Directly run **PolyFem** simulations from Blender.
 - Easy-to-use UI integrated into Blender's sidebar.
 
-## Table of Contents
+![image](https://github.com/user-attachments/assets/53fcc6f8-7211-423a-a67c-a0d715b88822)
+![image](https://github.com/user-attachments/assets/6e921f95-2748-4e83-a295-2abc3285f68c)
 
-1. [Installation](#installation)
-2. [Requirements](#requirements)
+## Table of Contents
+1. [Requirements](#requirements)
+2. [Installation](#installation)
 3. [File Structure](#file-structure)
 4. [Usage](#usage)
     - [Enabling the Add-on](#enabling-the-add-on)
@@ -27,29 +32,43 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
     - [Exporting Physics](#exporting-physics)
 5. [Known Issues](#known-issues)
 6. [Roadmap](#roadmap)
-7. [Contributing](#contributing)
-8. [License](#license)
-
----
-
-## Installation
-
-To install the Blender Plugin Simulation to JSON, follow these steps:
-
-1. **Zip the `polyfem` directory**:
-   - Navigate to the plugin directory and zip the entire `polyfem` folder. This folder contains the core files required for the plugin to function.
-
-2. **Install the plugin in Blender**:
-   - Open Blender.
-   - Go to **Edit > Preferences > Add-ons**.
-   - Click on the **Install** button and select the zip file you created in the previous step.
-
-3. **Activate the plugin**:
-   - After installation, search for `PolyFEM` in the add-on preferences and activate it by clicking the checkbox.
 
 ---
 
 ## Requirements
+
+In addition to Python dependencies, this plugin requires **Docker Desktop** for running `TetWild` and `PolyFem` simulations. Ensure that **Docker Desktop** is installed and running on your system.
+
+### Docker Images:
+
+- **TetWild**: Used for mesh generation and refinement.
+  - Image: `yixinhu/tetwild:latest`
+  
+- **PolyFem**: Used for running simulations.
+  - Image: `antoinebou12/polyfem:latest`
+
+### Steps to Install Docker and Pull Required Images:
+
+1. **Install Docker Desktop**:
+   - Download and install Docker Desktop from [here](https://www.docker.com/products/docker-desktop/).
+   - Make sure Docker is running and has access to your local file system.
+
+2. **Pull Docker Images**:
+   - Open a terminal and run the following commands to pull the required Docker images:
+     ```bash
+     docker pull yixinhu/tetwild:latest
+     docker pull antoinebou12/polyfem:latest
+     ```
+
+3. **Verify Docker Setup**:
+   - Ensure that Docker is working correctly by running:
+     ```bash
+     docker --version
+     ```
+
+---
+
+### Python Dependencies
 
 The following Python packages are required for this plugin:
 
@@ -67,6 +86,25 @@ rich==13.9.1
 Ensure you have Python 3.11 installed. These dependencies are automatically managed within the plugin, but if you are developing or modifying the plugin, you may need to install them manually using `pip`.
 
 ---
+
+## Installation
+
+To install the Blender Plugin Simulation to JSON, follow these steps:
+https://etstribology.github.io/PolyFEMBlenderPlugin/index.html
+![image](https://github.com/user-attachments/assets/fc10fb97-5daf-4a34-ad36-999d82311a2e)
+![image](https://github.com/user-attachments/assets/05305448-2c0d-4cbb-8d54-e1ad906be1d7)
+
+1. **Zip the `polyfem` directory**:
+   - Navigate to the plugin directory and zip the entire `polyfem` folder. This folder contains the core files required for the plugin to function.
+
+2. **Install the plugin in Blender**:
+   - Open Blender.
+   - Go to **Edit > Preferences > Add-ons**.
+   - Click on the **Install** button and select the zip file you created in the previous step.
+
+
+3. **Activate the plugin**:
+   - After installation, search for `PolyFEM` in the add-on preferences and activate it by clicking the checkbox.
 
 ## File Structure
 
@@ -131,12 +169,6 @@ To view these panels:
 - **Simulation Export**: Full support for exporting both simulations and meshes.
 - **STL and MSH Export**: Enhanced export options for STL and MSH formats.
 - **Integrated PolyFem and VTP Simulation**: Directly run PolyFem and VTP simulations within Blender.
-
----
-
-## License
-
-This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](./LICENSE) file for more details.
 
 ---
 
