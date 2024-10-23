@@ -1,30 +1,25 @@
-# Blender Plugin for PolyFEM
-
-![image](https://github.com/user-attachments/assets/919ffa16-039b-4a6d-822e-faf9c207ad67)
-
+# Blender Plugin Simulation to JSON
 
 [![Blender](https://img.shields.io/badge/Blender-4.20%2B-orange)](https://www.blender.org/)
 [![Release](https://img.shields.io/github/v/release/ETSTribology/BlenderPluginSimulation)](https://github.com/ETSTribology/BlenderPluginSimulation/releases)
 [![License](https://img.shields.io/github/license/ETSTribology/BlenderPluginSimulation)](./LICENSE)
 [![PolyFem](https://img.shields.io/badge/PolyFem-Compatible-blue)](https://polyfem.github.io/)
 
-This is an experimental Blender add-on developed for **ETS Lab**. It allows users to extract objects and their physics constraints from Blender and export them to JSON format, as well as run **PolyFem** simulations directly from Blender.
+This experimental Blender add-on, developed by **ETS Lab**, allows users to extract objects and their physics constraints from Blender and export them to JSON format. It also enables users to run **PolyFem** simulations directly within Blender.
 
-> **Note**: This plugin has been tested with Blender **4.2** and may not be compatible with earlier versions.
+> **Note**: This plugin is tested with Blender **4.2**. Compatibility with earlier versions is not guaranteed.
 
 ## Features
 
-- Export objects and their physics constraints to **JSON**.
-- Supports exporting meshes in **STL** and **MSH** formats.
-- Directly run **PolyFem** simulations from Blender.
-- Easy-to-use UI integrated into Blender's sidebar.
-
-![image](https://github.com/user-attachments/assets/53fcc6f8-7211-423a-a67c-a0d715b88822)
-![image](https://github.com/user-attachments/assets/6e921f95-2748-4e83-a295-2abc3285f68c)
+- Export objects and physics constraints to **JSON**.
+- Supports mesh export in **STL** and **MSH** formats.
+- Execute **PolyFem** simulations directly in Blender.
+- Intuitive user interface integrated into Blender's sidebar.
 
 ## Table of Contents
-1. [Requirements](#requirements)
-2. [Installation](#installation)
+
+1. [Installation](#installation)
+2. [Requirements](#requirements)
 3. [File Structure](#file-structure)
 4. [Usage](#usage)
     - [Enabling the Add-on](#enabling-the-add-on)
@@ -32,45 +27,30 @@ This is an experimental Blender add-on developed for **ETS Lab**. It allows user
     - [Exporting Physics](#exporting-physics)
 5. [Known Issues](#known-issues)
 6. [Roadmap](#roadmap)
+7. [Contributing](#contributing)
+8. [License](#license)
+
+---
+
+## Installation
+
+To install the Blender Plugin Simulation to JSON:
+
+1. **Prepare the Plugin**:
+    - Zip the entire `polyfem` directory, which contains the plugin's core files.
+
+2. **Install the Plugin**:
+    - Open Blender and go to **Edit > Preferences > Add-ons**.
+    - Click **Install** and select the zip file created in step 1.
+
+3. **Activate the Plugin**:
+    - Search for `PolyFEM` in the add-on preferences and activate it by checking the corresponding checkbox.
 
 ---
 
 ## Requirements
 
-In addition to Python dependencies, this plugin requires **Docker Desktop** for running `TetWild` and `PolyFem` simulations. Ensure that **Docker Desktop** is installed and running on your system.
-
-### Docker Images:
-
-- **TetWild**: Used for mesh generation and refinement.
-  - Image: `yixinhu/tetwild:latest`
-  
-- **PolyFem**: Used for running simulations.
-  - Image: `antoinebou12/polyfem:latest`
-
-### Steps to Install Docker and Pull Required Images:
-
-1. **Install Docker Desktop**:
-   - Download and install Docker Desktop from [here](https://www.docker.com/products/docker-desktop/).
-   - Make sure Docker is running and has access to your local file system.
-
-2. **Pull Docker Images**:
-   - Open a terminal and run the following commands to pull the required Docker images:
-     ```bash
-     docker pull yixinhu/tetwild:latest
-     docker pull antoinebou12/polyfem:latest
-     ```
-
-3. **Verify Docker Setup**:
-   - Ensure that Docker is working correctly by running:
-     ```bash
-     docker --version
-     ```
-
----
-
-### Python Dependencies
-
-The following Python packages are required for this plugin:
+This plugin requires the following Python packages:
 
 ```plaintext
 tetgen==0.6.5
@@ -83,40 +63,21 @@ noise==1.2.2
 rich==13.9.1
 ```
 
-Ensure you have Python 3.11 installed. These dependencies are automatically managed within the plugin, but if you are developing or modifying the plugin, you may need to install them manually using `pip`.
+Ensure Python 3.11 is installed. While the plugin manages dependencies automatically, developers may need to install these manually using `pip` if modifying the plugin.
 
 ---
-
-## Installation
-
-To install the Blender Plugin Simulation to JSON, follow these steps:
-https://etstribology.github.io/PolyFEMBlenderPlugin/index.html
-![image](https://github.com/user-attachments/assets/fc10fb97-5daf-4a34-ad36-999d82311a2e)
-![image](https://github.com/user-attachments/assets/05305448-2c0d-4cbb-8d54-e1ad906be1d7)
-
-1. **Zip the `polyfem` directory**:
-   - Navigate to the plugin directory and zip the entire `polyfem` folder. This folder contains the core files required for the plugin to function.
-
-2. **Install the plugin in Blender**:
-   - Open Blender.
-   - Go to **Edit > Preferences > Add-ons**.
-   - Click on the **Install** button and select the zip file you created in the previous step.
-
-
-3. **Activate the plugin**:
-   - After installation, search for `PolyFEM` in the add-on preferences and activate it by clicking the checkbox.
 
 ## File Structure
 
 ```
 polyfem/
-├── __init__.py                            # Main entry point for the plugin
+├── __init__.py                 # Main plugin entry point
 ├── operators/
 ├── panels/
-│   ├── poly_fem.py                  # UI panel for PolyFem simulation
+│   ├── poly_fem.py             # UI panel for PolyFem simulation
 ├── properties/
-│   ├── polyfem.py                # Stores PolyFem simulation settings
-│   ├── physics_export_addon.py # Stores add-on preferences
+│   ├── polyfem.py              # Stores simulation settings
+│   ├── physics_export_addon.py  # Stores add-on preferences
 ```
 
 ---
@@ -125,50 +86,61 @@ polyfem/
 
 ### Enabling the Add-on
 
-Once the add-on is installed and activated, you will find a new sidebar panel in Blender's **3D Viewport** under the categories:
+Once installed and activated, the add-on creates a new sidebar panel in Blender's **3D Viewport**:
 
 - **Physics**: For exporting physics constraints and mesh data.
-- **PolyFem**: For configuring and running PolyFem simulations.
+- **PolyFem**: For setting up and running PolyFem simulations.
 
-To view these panels:
+To access these panels:
+
 - Press `N` to open the sidebar.
-- Navigate to the relevant tab (PolyFem).
+- Navigate to the relevant tab (e.g., **PolyFem**).
 
 ### Running Simulations
 
-1. **Configure PolyFem Executable**:
-   - In the **PolyFem** panel, set the path to the **PolyFem executable** and provide a valid **JSON configuration** for the simulation.
-   
-2. **Set Project Path**:
-   - Choose a project path where simulation output (e.g., meshes and JSON files) will be saved.
+1. **Configure the PolyFem Executable**:
+   - In the **PolyFem** panel, set the path to the **PolyFem executable** and select a valid **JSON configuration** file for the simulation.
 
-3. **Run Simulation**:
-   - Click the **Run PolyFem Simulation** button to start the simulation.
-   - You can also open the **PolyFem documentation** by clicking the corresponding button in the panel.
+2. **Set Project Path**:
+   - Choose the path where the simulation output (meshes, JSON files) will be saved.
+
+3. **Start Simulation**:
+   - Press **Run PolyFem Simulation** to start the simulation.
+   - Optionally, you can open the **PolyFem documentation** from the panel.
 
 ### Exporting Physics
 
-1. **Set Export Options**:
-   - In the **PolyFem** panel, set the output directory, JSON filename, and choose the desired export format (STL, MSH).
+1. **Configure Export Options**:
+   - In the **PolyFem** panel, set the output directory, JSON filename, and choose between **STL** or **MSH** formats for mesh export.
 
 2. **Select Objects** (Optional):
-   - If you want to export only specific objects, select them in the viewport and enable **Export Selected Only**.
+   - To export specific objects, select them in the 3D Viewport and enable **Export Selected Only**.
 
 3. **Export to JSON**:
-   - Click **Create PolyFEM JSON** to generate a JSON file containing the object's physics constraints and other properties.
+   - Click **Create PolyFEM JSON** to generate a JSON file with the object's physics constraints and properties.
 
 ---
 
 ## Known Issues
 
+- Some edge cases with mesh exporting may not be fully supported.
+- PolyFem simulation crashes may occur with complex geometry or specific settings.
+
 ---
 
 ## Roadmap
 
-### Upcoming Features:
-- **Simulation Export**: Full support for exporting both simulations and meshes.
-- **STL and MSH Export**: Enhanced export options for STL and MSH formats.
-- **Integrated PolyFem and VTP Simulation**: Directly run PolyFem and VTP simulations within Blender.
+### Future Features
+
+- **Simulation Export**: Support for exporting simulations and meshes.
+- **STL and MSH Export**: Enhanced functionality for mesh formats.
+- **Integrated PolyFem and VTP Simulation**: In-Blender support for PolyFem and VTP simulations.
+
+---
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0**. For more details, check the [LICENSE](./LICENSE) file.
 
 ---
 
@@ -176,7 +148,6 @@ To view these panels:
 
 - [Blender Add-on Development Tutorial](https://docs.blender.org/manual/en/latest/advanced/scripting/addon_tutorial.html)
 - [Blender Extensions](https://docs.blender.org/manual/en/latest/advanced/extensions/index.html)
-- [Getting Started with Add-ons](https://docs.blender.org/manual/en/latest/advanced/extensions/getting_started.html)
 - [PolyFem GitHub Repository](https://github.com/polyfem/polyfem)
 
 ---
@@ -184,6 +155,6 @@ To view these panels:
 ### Authors
 
 - **Antoine Boucher** - Lead Developer and Maintainer
-- [ETS Lab](https://www.etsmtl.ca/en/research/chairs-and-labs/lab-multimedia)
+- **ETS Lab** - [ETS Lab Homepage](https://www.etsmtl.ca/en/research/chairs-and-labs/lab-multimedia)
 
-For any questions or issues, feel free to reach out or submit an issue on the [GitHub Repository](https://github.com/ETSTribology/BlenderPluginSimulation).
+For any inquiries, submit an issue on the [GitHub Repository](https://github.com/ETSTribology/BlenderPluginSimulation).
