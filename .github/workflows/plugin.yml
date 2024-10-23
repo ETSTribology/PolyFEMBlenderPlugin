@@ -20,7 +20,7 @@ jobs:
 
       - name: Zip Plugin
         run: |
-          python zip_plugin.py
+          python zip-plugin.py
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
