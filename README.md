@@ -1,8 +1,7 @@
 # Blender Plugin for PolyFEM
 
-<h1 align="center">
-<a href="https://polyfem.github.io/"><img alt="polyfem" src="https://polyfem.github.io/img/polyfem.png" width="60%"></a>
-</h1><br>
+![image](https://github.com/user-attachments/assets/919ffa16-039b-4a6d-822e-faf9c207ad67)
+
 
 [![Blender](https://img.shields.io/badge/Blender-4.20%2B-orange)](https://www.blender.org/)
 [![Release](https://img.shields.io/github/v/release/ETSTribology/BlenderPluginSimulation)](https://github.com/ETSTribology/BlenderPluginSimulation/releases)
