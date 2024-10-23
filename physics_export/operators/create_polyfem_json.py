@@ -4,14 +4,14 @@ import os
 from bpy.props import StringProperty
 from bpy.types import Operator
 
-
+# Operator to create the JSON file
 class CreatePolyFemJSONOperator(Operator):
     """Create a JSON configuration file for PolyFem simulation"""
     bl_idname = "polyfem.create_json"
-    bl_label = "Create PolyFem JSON"
-    bl_description = "Generate a JSON configuration file for PolyFem simulation"
+    bl_label = "Create PolyFEM JSON"
+    bl_description = "Generate a JSON configuration file for PolyFEM simulation"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     # Property for JSON filename; defaults to 'polyfem_config.json'
     json_filename: StringProperty(
         name="JSON Filename",
@@ -19,13 +19,13 @@ class CreatePolyFemJSONOperator(Operator):
         default="polyfem_config.json",
         subtype='FILE_NAME'
     )
-    
+
     def execute(self, context):
         settings = context.scene.polyfem_settings
         project_path = bpy.path.abspath(settings.project_path)
         json_filename = self.json_filename
         json_path = os.path.join(project_path, json_filename)
-        
+
         # Define the JSON data structure based on the provided structure
         json_data = {
             "contact": {
@@ -55,7 +55,7 @@ class CreatePolyFemJSONOperator(Operator):
             },
             "solver": {
                 "linear": {
-                    "solver": [settings.solver_linear_solver]
+                    "solver": settings.solver_linear_solver
                 },
                 "nonlinear": {
                     "x_delta": settings.solver_nonlinear_x_delta
@@ -86,7 +86,7 @@ class CreatePolyFemJSONOperator(Operator):
                 }
             }
         }
-        
+
         try:
             with open(json_path, 'w') as json_file:
                 json.dump(json_data, json_file, indent=4)
@@ -95,12 +95,12 @@ class CreatePolyFemJSONOperator(Operator):
         except Exception as e:
             self.report({'ERROR'}, f"Failed to create JSON file: {e}")
             return {'CANCELLED'}
-    
+
     def invoke(self, context, event):
         """Invoke the operator and bring up the file browser."""
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
-    
+
     def draw(self, context):
         """Draw the operator's properties in the UI."""
         layout = self.layout

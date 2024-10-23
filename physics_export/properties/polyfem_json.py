@@ -1,226 +1,227 @@
 import bpy
-from bpy.types import PropertyGroup
-from bpy.props import StringProperty, FloatProperty, IntProperty, BoolProperty, EnumProperty
+import json
+import os
+from bpy.props import (
+    StringProperty,
+    BoolProperty,
+    FloatProperty,
+    EnumProperty,
+)
+from bpy.types import Operator, Panel, PropertyGroup
 
-class PolyFemSettings(PropertyGroup):
-    # Existing properties
-    polyfem_executable_path: StringProperty(
-        name="Executable Path",
-        description="Path to the PolyFem executable",
-        subtype='FILE_PATH',
-        default=""
-    )
-    polyfem_json_input: StringProperty(
-        name="JSON Input",
-        description="Path to the PolyFem JSON input file",
-        subtype='FILE_PATH',
-        default=""
-    )
-    project_path: StringProperty(
-        name="Project Directory",
-        description="Directory containing simulation files",
-        subtype='DIR_PATH',
-        default=""
-    )
-    start_frame: IntProperty(
-        name="Start Frame",
-        description="Starting frame for the animation",
-        default=1
-    )
-    frame_interval: IntProperty(
-        name="Frame Interval",
-        description="Number of frames between each visibility change",
-        default=10
-    )
-    scale_factor: FloatProperty(
-        name="Scale Factor",
-        description="Scale factor to apply to deformation vectors",
-        default=1.0
-    )
-    json_filename: StringProperty(
-        name="JSON Filename",
-        description="Name of the JSON configuration file",
-        default="polyfem_config.json",
-        subtype='FILE_NAME'
-    )
 
-    # Contact Section
+# Define properties for the addon
+class PolyFEMSettings(PropertyGroup):
+    # Contact Settings
     contact_enabled: BoolProperty(
-        name="Contact Enabled",
-        description="Enable contact",
-        default=True
+        name="Enable Contact",
+        description="Enable contact in the simulation",
+        default=False,
     )
+
     contact_dhat: FloatProperty(
-        name="Contact DHat",
-        description="Value for dhat in contact",
-        default=1e-3
+        name="dhat",
+        description="Barrier activation distance",
+        default=0.001,
     )
+
     contact_friction_coefficient: FloatProperty(
         name="Friction Coefficient",
-        description="Friction coefficient for contact",
-        default=0.0
-    )
-    contact_epsv: FloatProperty(
-        name="Contact EpsV",
-        description="Value for epsv in contact",
-        default=1e-3
+        description="Coefficient of friction for contact",
+        default=0.0,
     )
 
-    # Time Section
+    contact_epsv: FloatProperty(
+        name="epsv",
+        description="Tangent velocity threshold",
+        default=0.001,
+    )
+
+    # Time Settings
+    time_integrator_items = [
+        ("ImplicitEuler", "Implicit Euler", "Use Implicit Euler integrator"),
+        ("ExplicitEuler", "Explicit Euler", "Use Explicit Euler integrator"),
+        ("ImplicitNewmark", "Implicit Newmark", "Use Implicit Newmark integrator"),
+    ]
     time_integrator: EnumProperty(
         name="Integrator",
-        description="Time integrator method",
-        items=[
-            ('ImplicitEuler', "Implicit Euler", "Use Implicit Euler integrator"),
-            ('ExplicitEuler', "Explicit Euler", "Use Explicit Euler integrator"),
-            ('RungeKutta', "Runge-Kutta", "Use Runge-Kutta integrator")
-        ],
-        default='ImplicitEuler'
+        description="Time integration method",
+        items=time_integrator_items,
+        default="ImplicitEuler",
     )
+
     time_tend: FloatProperty(
-        name="End Time (tend)",
-        description="End time of the simulation",
-        default=5.0
+        name="End Time",
+        description="Simulation end time",
+        default=1.0,
     )
+
     time_dt: FloatProperty(
-        name="Time Step (dt)",
+        name="Time Step",
         description="Time step size",
-        default=0.025
+        default=0.01,
     )
-    
-    # Space Section
+
+    # Space Settings
+    space_bc_method_items = [
+        ("sample", "Sample", "Sample method"),
+        ("project", "Project", "Project method"),
+    ]
     space_bc_method: EnumProperty(
-        name="Boundary Condition Method",
-        description="Method for boundary conditions",
-        items=[
-            ('sample', "Sample", "Use sample boundary condition method"),
-            ('standard', "Standard", "Use standard boundary condition method"),
-            ('custom', "Custom", "Use custom boundary condition method")
-        ],
-        default='sample'
+        name="BC Method",
+        description="Boundary condition method",
+        items=space_bc_method_items,
+        default="sample",
     )
-    
-    # Boundary Conditions Section
+
+    # Boundary Conditions
     boundary_rhs_x: FloatProperty(
         name="RHS X",
-        description="Right-hand side value for X direction",
-        default=0.0
+        description="Boundary condition RHS X",
+        default=0.0,
     )
+
     boundary_rhs_y: FloatProperty(
         name="RHS Y",
-        description="Right-hand side value for Y direction",
-        default=9.81
+        description="Boundary condition RHS Y",
+        default=0.0,
     )
+
     boundary_rhs_z: FloatProperty(
         name="RHS Z",
-        description="Right-hand side value for Z direction",
-        default=0.0
+        description="Boundary condition RHS Z",
+        default=0.0,
     )
-    
-    # Materials Section
+
+    # Materials Settings
+    materials_type_items = [
+        ("LinearElasticity", "Linear Elasticity", "Linear Elasticity material"),
+        ("NeoHookean", "Neo-Hookean", "Neo-Hookean material"),
+        ("SaintVenantKirchhoff", "Saint Venant-Kirchhoff", "Saint Venant-Kirchhoff material"),
+    ]
     materials_type: EnumProperty(
         name="Material Type",
-        description="Type of material",
-        items=[
-            ('NeoHookean', "Neo-Hookean", "Use Neo-Hookean material model"),
-            ('StVK', "St. Venant-Kirchhoff", "Use St. Venant-Kirchhoff material model"),
-            ('MooneyRivlin', "Mooney-Rivlin", "Use Mooney-Rivlin material model")
-        ],
-        default='NeoHookean'
+        description="Type of material model",
+        items=materials_type_items,
+        default="LinearElasticity",
     )
+
     materials_E: FloatProperty(
         name="Young's Modulus (E)",
-        description="Young's modulus of the material",
-        default=1e5
+        description="Young's Modulus of the material",
+        default=210000.0,
     )
+
     materials_nu: FloatProperty(
         name="Poisson's Ratio (nu)",
-        description="Poisson's ratio of the material",
-        default=0.4
+        description="Poisson's Ratio of the material",
+        default=0.3,
     )
+
     materials_rho: FloatProperty(
         name="Density (rho)",
         description="Density of the material",
-        default=1000.0
+        default=1000.0,
     )
-    
-    # Solver Section
+
+    # Solver Settings
+    solver_linear_solver_items = [
+        ("Eigen::SparseLU", "SparseLU", "Use Eigen's SparseLU solver"),
+        ("Eigen::PardisoLDLT", "PardisoLDLT", "Use Eigen's PardisoLDLT solver"),
+        ("Eigen::ConjugateGradient", "Conjugate Gradient", "Use Eigen's Conjugate Gradient solver"),
+    ]
     solver_linear_solver: EnumProperty(
         name="Linear Solver",
-        description="Linear solver options",
-        items=[
-            ('Eigen::PardisoLDLT', "Pardiso LDLT", "Use Eigen's Pardiso LDLT solver"),
-            ('Eigen::CholmodDecomposition', "Cholmod Decomposition", "Use Eigen's Cholmod Decomposition solver"),
-            ('Other', "Other", "Use another linear solver")
-        ],
-        default='Eigen::PardisoLDLT'
+        description="Linear solver for the simulation",
+        items=solver_linear_solver_items,
+        default="Eigen::SparseLU",
     )
+
     solver_nonlinear_x_delta: FloatProperty(
-        name="Nonlinear X Delta",
-        description="X delta value for nonlinear solver",
-        default=1e-05
+        name="Nonlinear x_delta",
+        description="Nonlinear solver x_delta parameter",
+        default=0.0,
     )
+
     solver_advanced_lump_mass_matrix: BoolProperty(
         name="Lump Mass Matrix",
-        description="Enable lump mass matrix in advanced solver settings",
-        default=True
+        description="Use lumped mass matrix",
+        default=False,
     )
+
     solver_contact_friction_convergence_tol: FloatProperty(
         name="Friction Convergence Tolerance",
         description="Tolerance for friction convergence",
-        default=0.01
+        default=0.01,
     )
+
     solver_contact_friction_iterations: IntProperty(
         name="Friction Iterations",
         description="Number of friction iterations",
-        default=1
+        default=1,
     )
-    
-    # Output Section
+
+    # Output Settings
     output_json: StringProperty(
         name="JSON Output",
-        description="Filename for JSON output",
+        description="Name of the JSON output file",
         default="results.json",
-        subtype='FILE_NAME'
     )
+
     output_paraview_file_name: StringProperty(
         name="ParaView Filename",
-        description="Filename for ParaView output",
-        default="sim.pvd",
-        subtype='FILE_NAME'
+        description="Name of the ParaView output file",
+        default="result.vtu",
     )
+
     output_paraview_material: BoolProperty(
-        name="Include Material",
-        description="Include material information in ParaView output",
-        default=True
+        name="Export Material",
+        description="Export material data to ParaView",
+        default=True,
     )
+
     output_paraview_body_ids: BoolProperty(
-        name="Include Body IDs",
-        description="Include body IDs in ParaView output",
-        default=True
+        name="Export Body IDs",
+        description="Export body IDs to ParaView",
+        default=True,
     )
+
     output_paraview_tensor_values: BoolProperty(
-        name="Include Tensor Values",
-        description="Include tensor values in ParaView output",
-        default=False
+        name="Export Tensor Values",
+        description="Export tensor values to ParaView",
+        default=True,
     )
+
     output_paraview_nodes: BoolProperty(
-        name="Include Nodes",
-        description="Include nodes in ParaView output",
-        default=False
+        name="Export Nodes",
+        description="Export nodes to ParaView",
+        default=True,
     )
+
     output_paraview_vismesh_rel_area: FloatProperty(
         name="VisMesh Relative Area",
-        description="Relative area for VisMesh in ParaView",
-        default=1e7
+        description="Relative area for visualization mesh",
+        default=1e-5,
     )
+
     output_advanced_save_solve_sequence_debug: BoolProperty(
         name="Save Solve Sequence Debug",
-        description="Enable saving of solve sequence debug information",
-        default=False
+        description="Save debug information for solve sequence",
+        default=False,
     )
+
     output_advanced_save_time_sequence: BoolProperty(
         name="Save Time Sequence",
-        description="Enable saving of time sequence data",
-        default=True
+        description="Save time sequence data",
+        default=True,
     )
+
+    # Project Path
+    project_path: StringProperty(
+        name="Project Path",
+        description="Path to the project directory",
+        default="//",
+        subtype='DIR_PATH',
+    )
+
+

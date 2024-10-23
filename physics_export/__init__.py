@@ -20,11 +20,14 @@ from .properties.export import ExportPhysicsSettings
 from .properties.heightmap import HeightmapSettings
 from .operators.heightmap import ApplyHeightmapOperator
 from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator
+from .operators.create_polyfem_json import CreatePolyFemJSONOperator
 from .operators.convert_normal_to_displacement import ConvertNormalToDisplacementOperator
 from .panels.heightmap import HeightmapPanel
 from .panels.poly_fem import PolyFemPanel
+from .panels.polyfem_json import PolyFemJSONPanel
 from .panels.physics import ExtractPhysicsPanel
 from .properties.physics_export_addon import PhysicsExportAddonPreferences
+from .properties.polyfem_json import PolyFemJSONSettings
 
 # List of all classes to register/unregister
 classes = [
@@ -32,6 +35,7 @@ classes = [
     ExportPhysicsSettings,
     HeightmapSettings,
     PolyFemSettings,
+    PolyFemJSONSettings,
 
     # AddonPreferences
     PhysicsExportAddonPreferences,
@@ -40,6 +44,7 @@ classes = [
     ExtractPhysicsPanel,
     HeightmapPanel,
     PolyFemPanel,
+    PolyFemJSONPanel,
 
     # Exporters
     ExportPhysics,
@@ -51,12 +56,13 @@ classes = [
     RenderPolyFemAnimationOperator,
     OpenPolyFemDocsOperator,
     ClearCachePolyFemOperator,
+    CreatePolyFemJSONOperator,
 ]
 
 bl_info = {
     "name": "BlenderPluginSimulation",
     "author": "Antoine Boucher",
-    "version": (1, 8),
+    "version": (1, 10),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > Physics",
     "description": "Extracts objects and their physics constraints and exports to JSON",
