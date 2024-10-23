@@ -110,19 +110,13 @@ class RunPolyFemSimulationOperator(Operator):
                 drive, rest = json_input.split(':', 1)
                 json_input = f'/{drive}{rest}'
 
-            # Ensure the paths are properly quoted
-            project_path = f'"{project_path}"'
-            json_input_basename = os.path.basename(json_input)
-        else:
-            json_input_basename = os.path.basename(json_input)
-
+        # Remove shell=True and build the command as a list for security
         try:
             result = subprocess.run(
-                f'docker run --rm -v {project_path}:/data antoinebou12/polyfem --json /data/{json_input_basename}',
+                ['docker', 'run', '--rm', '-v', f'{project_path}:/data', 'antoinebou12/polyfem', '--json', f'/data/{os.path.basename(json_input)}'],
                 capture_output=True,
                 text=True,
-                check=True,
-                shell=True  # Ensure shell is used on Windows
+                check=True
             )
             self.report_queue.put(('INFO', f"PolyFem Docker Output:\n{result.stdout}"))
             if result.stderr:

@@ -4,17 +4,17 @@
   "data": [
     {
       "schema_version": "1.0.0",
-      "id": "physics_export",
-      "name": "Physics Export",
-      "tagline": "Exports objects and physics constraints to JSON",
-      "version": "1.0.8",
+      "id": "polyfem",
+      "name": "PolyFem",
+      "tagline": "PolyFEM simulation plugin for Blender",
+      "version": "1.0.10",
       "type": "add-on",
       "maintainer": "Antoine Boucher <antoine@antoineboucher.info>",
       "license": [
-        "GPL-3.0-or-later"
+        "MIT"
       ],
       "blender_version_min": "4.2.0",
-      "website": "https://github.com/ETSTribology/BlenderPluginSimulation",
+      "website": "https://github.com/ETSTribology/PolyFEMBlenderPlugin",
       "permissions": {
         "files": "Required for reading and writing files during export",
         "network": "Required for accessing online resources or services"
@@ -27,10 +27,9 @@
       "platforms": [
         "windows-x64"
       ],
-      "wheels": [],
-      "archive_url": "./physics_export-1.0.8-windows_x64.zip",
-      "archive_size": 129181845,
-      "archive_hash": "sha256:2f83c629704841b25d73e1c9cc371c527ad1cfd58fcc90a828024c2deced8b1d"
+      "archive_url": "./polyfem-1.0.10.zip",
+      "archive_size": 26850,
+      "archive_hash": "sha256:6ae017c86cd991919791217df6ea7163900ad58901be911521390b825c63202a"
     }
   ]
 }

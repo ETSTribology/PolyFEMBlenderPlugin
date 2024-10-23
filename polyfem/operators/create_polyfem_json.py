@@ -267,6 +267,10 @@ class CreatePolyFemJSONOperator(Operator):
 
     def run_tetwild(self, input_file, output_file, ideal_edge_length=0.05, epsilon=1e-3, filter_energy=10, max_pass=80):
         """Run TetWild via Docker to generate an MSH file from a mesh."""
+        # Normalize paths to avoid issues with backslashes in Windows
+        input_file = input_file.replace("\\", "/")
+        output_file = output_file.replace("\\", "/")
+
         # Build the command string with the required parameters
         command = [
             "docker", "run", "--rm",
