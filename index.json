@@ -57,8 +57,37 @@
         "windows-x64"
       ],
       "archive_url": "./polyfem-1.0.11.zip",
-      "archive_size": 21693,
-      "archive_hash": "sha256:524f804c51eb723bb32801ddc43809b528edf2306e5aa830c4cc2c1c0221eee6"
+      "archive_size": 26919,
+      "archive_hash": "sha256:18a85ba6c6193e68edcf2f6fd00d522c40e3731008ae6c8571f44ec41900553c"
+    },
+    {
+      "schema_version": "1.0.0",
+      "id": "polyfem",
+      "name": "PolyFem",
+      "tagline": "PolyFEM simulation plugin for Blender",
+      "version": "1.0.13",
+      "type": "add-on",
+      "maintainer": "Antoine Boucher <antoine@antoineboucher.info>",
+      "license": [
+        "MIT"
+      ],
+      "blender_version_min": "4.2.0",
+      "website": "https://github.com/ETSTribology/PolyFEMBlenderPlugin",
+      "permissions": {
+        "files": "Required for reading and writing files during export",
+        "network": "Required for accessing online resources or services"
+      },
+      "tags": [
+        "Object",
+        "Physics",
+        "Import-Export"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "archive_url": "./polyfem-1.0.13.zip",
+      "archive_size": 23740,
+      "archive_hash": "sha256:813094a6c587011abaa5e313534c75071f64a201064b6af5ad94f777cbe441ec"
     }
   ]
 }
