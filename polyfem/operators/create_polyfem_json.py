@@ -46,6 +46,7 @@ class POLYFEM_OT_ShowMessageBox(Operator):
         layout.label(text=self.message)
 
 
+
 class PolyFEMApplyMaterial(Operator):
     bl_idname = "polyfem.apply_material"
     bl_label = "Apply PolyFem Material"
@@ -56,20 +57,51 @@ class PolyFEMApplyMaterial(Operator):
         obj = bpy.data.objects.get(self.obj_name)
         settings = context.scene.polyfem_settings
 
-        if obj:
+        if obj and obj.type == 'MESH':
             # Assign material properties from the UI to the object's custom properties
             obj["material_type"] = settings.materials_type
             obj["material_E"] = settings.materials_E
             obj["material_nu"] = settings.materials_nu
             obj["material_rho"] = settings.materials_rho
-            obj["material_id"] = obj.get("material_id", len(context.scene.objects) + 1)  # Assign a unique ID
 
-            self.report({'INFO'}, f"Material applied to {obj.name} (ID: {obj['material_id']})")
+            # Ensure a unique material ID is assigned
+            if "material_id" not in obj:
+                # Get the highest material_id used in the scene and assign a new unique ID
+                used_ids = [o.get("material_id", 0) for o in bpy.context.scene.objects if "material_id" in o]
+                next_id = max(used_ids, default=0) + 1
+                obj["material_id"] = next_id
+            else:
+                # Keep the same material ID if it already exists
+                obj["material_id"] = obj.get("material_id")
+
+            # Create or get an existing material based on the selected material properties
+            material_name = settings.selected_material
+            if material_name not in bpy.data.materials:
+                mat = bpy.data.materials.new(name=material_name)
+            else:
+                mat = bpy.data.materials[material_name]
+
+            # Set material properties (for later visualization or export)
+            mat["material_type"] = settings.materials_type
+            mat["material_E"] = settings.materials_E
+            mat["material_nu"] = settings.materials_nu
+            mat["material_rho"] = settings.materials_rho
+
+            # Enable 'use_nodes' if not already
+            if not mat.use_nodes:
+                mat.use_nodes = True
+
+            # Link the material to the object
+            if obj.data.materials:
+                obj.data.materials[0] = mat  # Replace existing material
+            else:
+                obj.data.materials.append(mat)  # Add new material to the mesh
+
+            self.report({'INFO'}, f"Material '{material_name}' applied to {obj.name} (ID: {obj['material_id']})")
         else:
-            self.report({'ERROR'}, f"Object {self.obj_name} not found")
+            self.report({'ERROR'}, f"Object {self.obj_name} not found or is not a mesh")
 
         return {'FINISHED'}
-
 
 # ----------------------------
 # Create PolyFem JSON Operator
@@ -88,15 +120,16 @@ class CreatePolyFemJSONOperator(Operator):
     docker_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
     def execute(self, context):
+        selected_objects = context.selected_objects[:]
         settings = context.scene.polyfem_settings
         # Start the background thread for JSON creation and mesh exporting
-        threading.Thread(target=self.background_process, args=(context,), daemon=True).start()
+        threading.Thread(target=self.background_process, args=(selected_objects, context), daemon=True).start()
         # Register a timer to process the report queue
         bpy.app.timers.register(self.process_report_queue)
         self.report({'INFO'}, "Started JSON creation and mesh exporting in the background.")
         return {'FINISHED'}
 
-    def background_process(self, context):
+    def background_process(self, selected_objects, context):
         """Background thread to handle JSON creation and mesh exporting."""
         settings = context.scene.polyfem_settings
         project_path = bpy.path.abspath(settings.export_path)
@@ -114,42 +147,44 @@ class CreatePolyFemJSONOperator(Operator):
 
         # Create JSON data structure
         try:
-            json_data = self.create_json_data(settings)
+            json_data = self.create_json_data(settings, context, selected_objects)
             self.report_queue.put(('INFO', "JSON data structure created successfully."))
         except Exception as e:
             self.report_queue.put(('ERROR', f"Failed to create JSON data structure: {e}"))
             return
 
-        # Determine which objects to export
-        try:
-            objects_to_export = self.get_objects_to_export(context, settings)
-            if not objects_to_export:
-                self.report_queue.put(('WARNING', "No objects selected for export."))
-                return
-            self.report_queue.put(('INFO', f"Found {len(objects_to_export)} objects to export."))
-        except Exception as e:
-            self.report_queue.put(('ERROR', f"Failed to determine objects to export: {e}"))
-            return
-
-        # Ensure the output mesh directory exists
-        output_mesh_dir = os.path.join(project_path, "exported_meshes")
-        if not os.path.exists(output_mesh_dir):
+        def update_main_thread():
             try:
-                os.makedirs(output_mesh_dir)
-                self.report_queue.put(('INFO', f"Created mesh export directory at '{output_mesh_dir}'"))
+                if not os.path.exists(project_path):
+                    os.makedirs(project_path)
+                    self.report_queue.put(('INFO', f"Created project directory at '{project_path}'"))
+
+                output_mesh_dir = os.path.join(project_path, "exported_meshes")
+                if not os.path.exists(output_mesh_dir):
+                    os.makedirs(output_mesh_dir)
+                    self.report_queue.put(('INFO', f"Created mesh export directory at '{output_mesh_dir}'"))
+
+                # Write the JSON file
+                self.write_json_file(json_data, json_path)
+                self.report_queue.put(('INFO', f"JSON file created at '{json_path}'"))
+
             except Exception as e:
-                self.report_queue.put(('ERROR', f"Failed to create mesh export directory: {e}"))
-                return
+                self.report_queue.put(('ERROR', f"Failed to create directories or write JSON: {e}"))
+
+            return None
+
+        bpy.app.timers.register(update_main_thread)
 
         current_id = 1
         geometry_list = []
         docker_futures = []
 
-        for obj in objects_to_export:
+        for obj in selected_objects:
             if obj.type != 'MESH':
                 self.report_queue.put(('WARNING', f"Skipping non-mesh object '{obj.name}'."))
                 continue  # Skip non-mesh objects
 
+            output_mesh_dir = os.path.join(project_path, "exported_meshes")
             obj_data = self.process_object(obj, current_id, output_mesh_dir, settings, context)
             if obj_data is None:
                 self.report_queue.put(('ERROR', f"Failed to process object '{obj.name}'."))
@@ -168,6 +203,7 @@ class CreatePolyFemJSONOperator(Operator):
             return
 
         self.report_queue.put(('INFO', f"JSON file created at '{json_path}'"))
+        output_mesh_dir = os.path.join(project_path, "exported_meshes")
         self.report_queue.put(('INFO', f"Meshes exported successfully in '{output_mesh_dir}'"))
 
         # Wait for all Docker tasks to complete
@@ -200,8 +236,6 @@ class CreatePolyFemJSONOperator(Operator):
         # Determine if object is an obstacle
         if obj.rigid_body and obj.rigid_body.type == 'PASSIVE':
             obj_data["is_obstacle"] = True
-
-        obj_data["material"] = material_id
 
         # Include point selection if vertices are selected and export_point_selection is True
         if settings.export_point_selection:
@@ -352,8 +386,9 @@ class CreatePolyFemJSONOperator(Operator):
                     output_dir = f'/{output_dir[0].lower()}{output_dir[2:]}'
 
             # Build the command list with the required parameters
+            container_name = f"tetwild_{os.path.basename(input_file)}"
             command = [
-                "docker", "run", "--rm",
+                "docker", "run", "--rm", "--name", container_name,
                 "-v", f"{input_dir}:/data",  # Mount the input directory
                 "yixinhu/tetwild",  # Docker image
                 "--input", f"/data/{os.path.basename(input_file)}",  # Input file path in container
@@ -371,32 +406,52 @@ class CreatePolyFemJSONOperator(Operator):
             if result.stderr:
                 self.report_queue.put(('WARNING', f"TetWild Warnings:\n{result.stderr}"))
             self.report_queue.put(('INFO', f"Generated MSH file at '{output_file}'"))
+            self.cleanup_docker_container(container_name)
             return True
         except FileNotFoundError:
             self.report_queue.put(('ERROR', "Docker not found. Please ensure Docker is installed and in your system's PATH."))
             return False
         except subprocess.CalledProcessError as e:
+            self.cleanup_docker_container(container_name)
             self.report_queue.put(('ERROR', f"Error running TetWild:\n{e.stderr}"))
             return False
         except Exception as e:
+            self.cleanup_docker_container(container_name)
             self.report_queue.put(('ERROR', f"An unexpected error occurred while running TetWild:\n{e}"))
             return False
 
-    def create_json_data(self, settings, context):
+    def cleanup_docker_container(self, container_name):
+        """Manually stop and remove any lingering Docker containers by name."""
+        try:
+            # Check if the container exists
+            subprocess.run(["docker", "container", "inspect", container_name], check=True, stdout=subprocess.PIPE)
+
+            # If it exists, remove it
+            self.report_queue.put(('INFO', f"Cleaning up Docker container '{container_name}'..."))
+            subprocess.run(["docker", "container", "rm", "-f", container_name], check=True, stdout=subprocess.PIPE)
+            self.report_queue.put(('INFO', f"Docker container '{container_name}' cleaned up successfully."))
+
+        except subprocess.CalledProcessError:
+            self.report_queue.put(('INFO', f"No lingering Docker container '{container_name}' found, cleanup not needed."))
+        except Exception as e:
+            self.report_queue.put(('ERROR', f"Error during Docker container cleanup: {e}"))
+
+    def create_json_data(self, settings, context, selected_objects):
         """Create the initial JSON data structure based on settings."""
         materials_list = []  # List of materials for the global materials section
         materials_map = {}  # Map to avoid duplicate materials
         geometry_list = []  # List of objects (geometry)
 
         # Loop through all objects and assign materials
-        for obj in context.selected_objects:
+        for obj in selected_objects:
             if obj.type == 'MESH':
                 # Check if the object has custom material properties
                 material_data = {
+                    "id": obj.get("material_id", 0),
                     "type": obj.get("material", settings.materials_type),
-                    "E": obj.get("material_E", settings.materials_E),
-                    "nu": obj.get("material_nu", settings.materials_nu),
-                    "rho": obj.get("material_rho", settings.materials_rho)
+                    "E": round(obj.get("material_E", settings.materials_E), 6),
+                    "nu": round(obj.get("material_nu", settings.materials_nu), 4),
+                    "rho": round(obj.get("material_rho", settings.materials_rho), 6)
                 }
 
                 # Convert the material properties to a tuple (for easy comparison)
@@ -411,7 +466,9 @@ class CreatePolyFemJSONOperator(Operator):
                     material_id = materials_map[material_tuple]
 
                 # Process the object and assign the material by its ID
-                obj_data = self.process_object(obj, material_id, settings, context)
+                settings = context.scene.polyfem_settings
+                project_path = bpy.path.abspath(settings.export_path)
+                obj_data = self.process_object(obj, material_id, project_path, settings, context)
                 geometry_list.append(obj_data)
 
         # Final JSON structure
@@ -435,7 +492,7 @@ class CreatePolyFemJSONOperator(Operator):
             "boundary_conditions": {
                 "rhs": [settings.boundary_rhs_x, settings.boundary_rhs_y, settings.boundary_rhs_z]
             },
-            "materials": materials_list,  # The global materials list
+            "materials": materials_list,
             "solver": {
                 "linear": {
                     "solver": settings.solver_linear_solver
@@ -468,17 +525,10 @@ class CreatePolyFemJSONOperator(Operator):
                     "save_time_sequence": settings.output_advanced_save_time_sequence
                 }
             },
-            "geometry": geometry_list  # List of object entries
+            "geometry": geometry_list
         }
 
         return json_data
-
-    def get_objects_to_export(self, context, settings):
-        """Determine which objects to export based on settings."""
-        if settings.export_selected_only:
-            return context.selected_objects
-        else:
-            return context.scene.objects
 
     def extract_physics_properties(self, obj):
         """Extract physics properties from an object."""
@@ -606,7 +656,12 @@ class CreatePolyFemJSONOperator(Operator):
         """Write the collected data to a JSON file."""
         try:
             with open(json_path, 'w') as json_file:
-                json.dump(data, json_file, indent=4)
+                def float_precision(o):
+                    if isinstance(o, float):
+                        return format(o, ".6f")  # Use 6 decimal places for floats
+                    raise TypeError(f"Object of type {type(o)} is not JSON serializable")
+
+                json.dump(data, json_file, indent=4, default=float_precision)
             self.report_queue.put(('INFO', f"JSON file created at '{json_path}'"))
             return True
         except Exception as e:
@@ -617,7 +672,9 @@ class CreatePolyFemJSONOperator(Operator):
         """Process messages from the report queue and display them to the user."""
         while not self.report_queue.empty():
             level, message = self.report_queue.get()
-            bpy.ops.polyfem.show_message_box('INVOKE_DEFAULT', message=message, title=f"PolyFem - {level}", icon=level)
+            self.report({'INFO'}, message) if level == 'INFO' else \
+                self.report({'WARNING'}, message) if level == 'WARNING' else \
+                self.report({'ERROR'}, message)
         return 0.1  # Continue the timer every 0.1 seconds
 
     def show_popup(self, message, title, icon):

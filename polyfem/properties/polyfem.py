@@ -329,7 +329,7 @@ class PolyFEMSettings(PropertyGroup):
     output_paraview_file_name: StringProperty(
         name="ParaView Filename",
         description="Name of the ParaView output file",
-        default="result.vtu",
+        default="result.pvd",
     )
 
     output_paraview_material: BoolProperty(
@@ -382,7 +382,6 @@ class PolyFEMSettings(PropertyGroup):
         subtype='FILE_PATH'
     )
 
-
     show_export_settings: BoolProperty(name="Show Export Settings", description="Show export settings", default=False)
 
     show_contact_settings: BoolProperty(name="Show Contact Settings", description="Show contact settings", default=False)
@@ -398,3 +397,7 @@ class PolyFEMSettings(PropertyGroup):
     show_solver_settings: BoolProperty(name="Show Solver Settings", description="Show solver settings", default=False)
 
     show_output_settings: BoolProperty(name="Show Output Settings", description="Show output settings", default=False)
+
+
+class PolyFEMObjectProperties(bpy.types.PropertyGroup):
+    collapse: bpy.props.BoolProperty(default=False)

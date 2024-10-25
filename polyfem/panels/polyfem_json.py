@@ -17,24 +17,50 @@ class PolyFEMPanel(Panel):
         box = layout.box()
         row = box.row()
         row.label(text="Selected Objects and Materials", icon='OBJECT_DATA')
+
         if context.selected_objects:
             for obj in context.selected_objects:
+                # Access the object's PolyFEM properties
+                polyfem_props = obj.polyfem_props
+
+                # Create collapsible box for each object
                 obj_box = box.box()
-                obj_box.label(text=f"Object: {obj.name}", icon='OBJECT_DATA')
+                row = obj_box.row()
 
-                # Add a material ID for the object
-                obj_box.prop(obj, "name", text="Rename Object", icon='FONT_DATA')
+                # Add a triangle icon for collapse and expansion, bound to the collapse state
+                row.prop(polyfem_props, "collapse", text="", icon="TRIA_DOWN" if polyfem_props.collapse else "TRIA_RIGHT", emboss=False)
+                row.label(text=f"Object: {obj.name}", icon='OBJECT_DATA')
 
-                # Apply material from dropdown to the object
-                obj_box.prop(settings, "selected_material", text="Assign Material")
+                # Only expand the object info if the arrow is clicked
+                if polyfem_props.collapse:
+                    # Display and allow renaming the object
+                    obj_box.prop(obj, "name", text="Rename Object", icon='FONT_DATA')
 
-                # Add a field for material ID
-                material_id = obj.get("material_id", 0)
-                obj_box.prop(obj, '["material_id"]', text="Material ID")
+                    # Display the object's assigned material and material ID
+                    material_id = obj.get("material_id", "No Material")
+                    obj_box.label(text=f"Material ID: {material_id}")
 
-                apply_material_btn = obj_box.operator("polyfem.apply_material", text="Apply Material", icon='MATERIAL')
-                apply_material_btn.obj_name = obj.name  # Pass object name to operator
+                    # Show material properties if they exist
+                    if "material_type" in obj.keys():
+                        obj_box.label(text=f"Material Type: {obj['material_type']}")
+                        obj_box.label(text=f"Young's Modulus (E): {obj['material_E']}")
+                        obj_box.label(text=f"Poisson's Ratio (nu): {obj['material_nu']}")
+                        obj_box.label(text=f"Density (rho): {obj['material_rho']}")
+                    else:
+                        obj_box.label(text="No Material Applied", icon='ERROR')
 
+                    # Show the actual material assigned to the object
+                    if obj.data.materials:
+                        obj_box.label(text=f"Assigned Material: {obj.data.materials[0].name}")
+                    else:
+                        obj_box.label(text="No material assigned to the object", icon='ERROR')
+
+                    # Apply material from dropdown to the object
+                    obj_box.prop(context.scene.polyfem_settings, "selected_material", text="Assign Material")
+
+                    # Button to apply the selected material
+                    apply_material_btn = obj_box.operator("polyfem.apply_material", text="Apply Material", icon='MATERIAL')
+                    apply_material_btn.obj_name = obj.name  # Pass the object name to the operator
         else:
             box.label(text="No objects selected.", icon='ERROR')
 

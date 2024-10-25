@@ -35,11 +35,18 @@ def append_modules_to_sys_path(modules_path):
     if modules_path not in sys.path:
         sys.path.append(modules_path)
 
-def display_message(message, title="PolyFem Information", icon='INFO'):
-    """Display a popup message to the user."""
+def display_message(message, title="Notification", icon='INFO'):
+    """Schedule a popup message to be shown on the main thread."""
     def draw(self, context):
         self.layout.label(text=message)
-    bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
+
+    # Schedule the popup on the main thread using bpy.app.timers
+    def show_popup():
+        bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
+        return None  # Return None to stop the timer
+
+    # Register a one-time timer to run the popup on the main thread
+    bpy.app.timers.register(show_popup)
 
 def background_install_packages(packages, modules_path):
     """Install the required Python packages in the background."""
@@ -84,18 +91,22 @@ def is_docker_installed():
 def background_pull_docker_images():
     """Pull Docker images in the background with progress updates."""
     def pull_images():
-        bpy.context.window_manager.progress_begin(0, len(DOCKER_IMAGES))
-        for i, image in enumerate(DOCKER_IMAGES):
-            try:
-                logger.info(f"Pulling Docker image '{image}'...")
-                subprocess.run(["docker", "pull", image], check=True)
-                logger.info(f"Pulled Docker image '{image}' successfully.")
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Failed to pull Docker image '{image}': {e}")
-                display_message(f"Failed to pull Docker image '{image}'. Check console for details.", icon='ERROR')
-            bpy.context.window_manager.progress_update(i + 1)
-        bpy.context.window_manager.progress_end()
-        display_message("All Docker images pulled successfully.")
+        try:
+            bpy.context.window_manager.progress_begin(0, len(DOCKER_IMAGES))
+            for i, image in enumerate(DOCKER_IMAGES):
+                try:
+                    logger.info(f"Pulling Docker image '{image}'...")
+                    subprocess.run(["docker", "pull", image], check=True)
+                    logger.info(f"Pulled Docker image '{image}' successfully.")
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"Failed to pull Docker image '{image}': {e}")
+                    display_message(f"Failed to pull Docker image '{image}'. Check console for details.", icon='ERROR')
+                bpy.context.window_manager.progress_update(i + 1)
+            bpy.context.window_manager.progress_end()
+            display_message("All Docker images pulled successfully.")
+        except Exception as e:
+            display_message(f"Error pulling Docker images: {e}", title="Error", icon='ERROR')
+            logger.error(f"Error during Docker image pull: {e}")
 
     threading.Thread(target=pull_images, daemon=True).start()
 
@@ -104,12 +115,13 @@ from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocs
 from .operators.create_polyfem_json import CreatePolyFemJSONOperator, PolyFEMApplyMaterial, POLYFEM_OT_ShowMessageBox
 from .panels.polyfem_json import PolyFEMPanel
 from .properties.physics_export_addon import PhysicsExportAddonPreferences
-from .properties.polyfem import PolyFEMSettings
+from .properties.polyfem import PolyFEMSettings, PolyFEMObjectProperties
 
 # List of all classes to register/unregister
 classes = [
     # PropertyGroups
     PolyFEMSettings,
+    PolyFEMObjectProperties,
 
     # AddonPreferences
     PhysicsExportAddonPreferences,
@@ -147,7 +159,7 @@ def register():
     bl_info = {
         "name": "PolyFem",
         "author": "Antoine Boucher",
-        "version": (1, 0, 12),
+        "version": (1, 0, 13),
         "blender": (4, 2, 0),
         "location": "View3D > Sidebar > Physics",
         "description": "PolyFEM simulation plugin for Blender",
@@ -163,6 +175,7 @@ def register():
 
         # Register PointerProperties
         bpy.types.Scene.polyfem_settings = bpy.props.PointerProperty(type=PolyFEMSettings)
+        bpy.types.Object.polyfem_props = bpy.props.PointerProperty(type=PolyFEMObjectProperties)
 
         # Check if Docker is installed
         if is_docker_installed():
@@ -184,7 +197,7 @@ def unregister():
         bl_info = {
             "name": "PolyFem",
             "author": "Antoine Boucher",
-            "version": (1, 0, 12),
+            "version": (1, 0, 13),
             "blender": (4, 2, 0),
             "location": "View3D > Sidebar > Physics",
             "description": "PolyFEM simulation plugin for Blender",
@@ -196,6 +209,8 @@ def unregister():
         # Unregister PointerProperties first to avoid dependency issues
         if hasattr(bpy.types.Scene, "polyfem_settings"):
             del bpy.types.Scene.polyfem_settings
+        if hasattr(bpy.types.Object, "polyfem_props"):
+            del bpy.types.Object.polyfem_props
 
         # Unregister classes in reverse order to handle dependencies correctly
         for cls in reversed(classes):

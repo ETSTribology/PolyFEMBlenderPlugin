@@ -70,10 +70,13 @@ class RunPolyFemSimulationOperator(Operator):
 
     def execute(self, context):
         polyfem_settings = context.scene.polyfem_settings
-        project_path = bpy.path.abspath(polyfem_settings.project_path)
+        export_path = bpy.path.abspath(polyfem_settings.export_path)
 
-        if not os.path.exists(project_path):
-            self.report({'ERROR'}, f"Project directory '{project_path}' does not exist.")
+        # Log starting status
+        self.report({'INFO'}, f"Starting PolyFem simulation with export path: '{export_path}'")
+
+        if not os.path.exists(export_path):
+            self.report({'ERROR'}, f"Project directory '{export_path}' does not exist.")
             return {'CANCELLED'}
 
         # Prevent multiple instances
@@ -82,6 +85,7 @@ class RunPolyFemSimulationOperator(Operator):
             return {'CANCELLED'}
 
         # Start the background thread
+        self.report({'INFO'}, "Initializing background thread for PolyFem simulation...")
         RunPolyFemSimulationOperator._thread = threading.Thread(
             target=self.run_polyfem_simulation,
             args=(context,),
@@ -92,95 +96,115 @@ class RunPolyFemSimulationOperator(Operator):
         # Register the timer to process the report queue
         bpy.app.timers.register(self.process_report_queue)
 
-        self.report({'INFO'}, "Started PolyFem simulation in the background.")
+        self.report({'INFO'}, "PolyFem simulation started in the background.")
         return {'FINISHED'}
 
     def run_polyfem_simulation(self, context):
         """Run the PolyFem simulation using Docker with the provided JSON config"""
-
-        # Retrieve settings from the scene's PolyFem configuration
         polyfem_settings = context.scene.polyfem_settings
-        json_input = bpy.path.abspath(polyfem_settings.polyfem_json_input)
-        project_path = bpy.path.abspath(polyfem_settings.project_path)
+        json_input = bpy.path.abspath(polyfem_settings.json_filename)
+        export_path = bpy.path.abspath(polyfem_settings.export_path)
+
+        self.report_queue.put(('INFO', f"Using JSON configuration: '{json_input}'"))
+        self.report_queue.put(('INFO', f"Export path resolved to: '{export_path}'"))
+
+        json_input_path = os.path.join(export_path, os.path.basename(json_input))
 
         # Check if the JSON input file exists
-        if not os.path.isfile(json_input):
+        if not os.path.isfile(json_input_path):
             self.report_queue.put(('ERROR', f"PolyFem JSON input file '{json_input}' not found."))
             return
 
+        self.report_queue.put(('INFO', "Validating paths and Docker setup..."))
+
         # Adjust paths for Docker on Windows
         if platform.system() == 'Windows':
-            # Convert backslashes to forward slashes for Docker
-            project_path = project_path.replace('\\', '/')
-            json_input = json_input.replace('\\', '/')
+            export_path = export_path.replace('\\', '/')
+            json_input_path = json_input_path.replace('\\', '/')
+            if ':' in export_path:
+                drive, rest = export_path.split(':', 1)
+                export_path = f'/{drive.lower()}{rest}'
+            if ':' in json_input_path:
+                drive, rest = json_input_path.split(':', 1)
+                json_input_path = f'/{drive.lower()}{rest}'
 
-            # Convert drive letters (e.g., C:) to Unix-like format for Docker (e.g., /c/)
-            if ':' in project_path:
-                drive, rest = project_path.split(':', 1)
-                project_path = f'/{drive.lower()}{rest}'
-            if ':' in json_input:
-                drive, rest = json_input.split(':', 1)
-                json_input = f'/{drive.lower()}{rest}'
+        self.report_queue.put(('INFO', f"Adjusted Docker paths for platform '{platform.system()}': export_path='{export_path}', json_input_path='{json_input_path}'"))
 
-        # Build the Docker command as a list to avoid shell=True for security reasons
+        # Docker command setup with a named container for tracking
+        container_name = "polyfem_simulation"
         command = [
-            'docker', 'run', '--rm',
-            '-v', f'{project_path}:/data',  # Mount project path as /data in the container
+            'docker', 'run', '--rm', '--name', container_name,
+            '-v', f'{export_path}:/data',  # Mount project path as /data in the container
             'antoinebou12/polyfem',  # Docker image
-            '--json', f'/data/{os.path.basename(json_input)}'  # Use the JSON file in the container
+            '--json', f'/data/{os.path.basename(json_input_path)}'  # Use the JSON file in the container
         ]
+
+        self.report_queue.put(('INFO', f"Docker command built: {' '.join(command)}"))
 
         # Try to run the PolyFem simulation using Docker
         try:
-            result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            # Report the output of the Docker command
-            self.report_queue.put(('INFO', f"PolyFem Docker Output:\n{result.stdout}"))
+            self.report_queue.put(('INFO', "Starting Docker container for PolyFem simulation..."))
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+
+            # Capture the output
+            self.report_queue.put(('INFO', f"Docker Output:\n{result.stdout}"))
             if result.stderr:
-                self.report_queue.put(('WARNING', f"PolyFem Docker Warnings:\n{result.stderr}"))
+                self.report_queue.put(('WARNING', f"Docker Warnings:\n{result.stderr}"))
+
             self.report_queue.put(('INFO', "PolyFem simulation completed successfully."))
         except subprocess.CalledProcessError as e:
-            self.report_queue.put(('ERROR', f"PolyFem Docker simulation failed:\n{e.stderr}"))
+            self.report_queue.put(('ERROR', f"Docker simulation failed with error:\n{e.stderr}"))
+            self.cleanup_docker_container(container_name)
         except FileNotFoundError:
             self.report_queue.put(('ERROR', "Docker not found. Please ensure Docker is installed and in your system's PATH."))
+            self.cleanup_docker_container(container_name)
         except Exception as e:
-            self.report_queue.put(('ERROR', f"An unexpected error occurred while running PolyFem in Docker:\n{e}"))
+            self.report_queue.put(('ERROR', f"Unexpected error during PolyFem simulation:\n{e}"))
+            self.cleanup_docker_container(container_name)
 
     def process_report_queue(self):
         """Process messages from the report queue and display them to the user."""
-        messages = []
+        output_log = []  # Store all messages to display at the end
+        has_error = False  # Track if any errors occurred
+
         while not self.report_queue.empty():
             level, message = self.report_queue.get()
+            if level == 'ERROR':
+                has_error = True
+            output_log.append(message)
             self.report({level}, message)
-            messages.append((level, message))  # Append message to the list
 
-        # Now messages contain all the messages processed
         # Check if the thread has finished
         if not RunPolyFemSimulationOperator._thread.is_alive():
-            # Determine the final status
-            info_messages = [msg for lvl, msg in messages if lvl == 'INFO']
-            error_messages = [msg for lvl, msg in messages if lvl == 'ERROR']
-            warning_messages = [msg for lvl, msg in messages if lvl == 'WARNING']
-
-            if error_messages:
-                # Show error popup with all error messages
-                bpy.app.timers.register(lambda: self.show_popup("\n".join(error_messages), "Simulation Failed", 'ERROR'))
-            elif info_messages:
-                # Show success popup
-                bpy.app.timers.register(lambda: self.show_popup("Simulation completed successfully!", "Simulation Complete", 'INFO'))
-            elif warning_messages:
-                # Show warning popup
-                bpy.app.timers.register(lambda: self.show_popup("Simulation completed with warnings.", "Simulation Complete", 'WARNING'))
-
-            # Unregister the timer
+            # Display the final output in a popup
+            bpy.ops.polyfem.show_message_box(
+                'INVOKE_DEFAULT',
+                message="\n".join(output_log),
+                title="PolyFem Simulation Output" if not has_error else "PolyFem Simulation Errors",
+                icon='ERROR' if has_error else 'INFO'
+            )
+            # Unregister the timer once the process is done
             return None
         else:
-            # Continue the timer
-            return 0.1  # Continue the timer every 0.1 seconds
+            # Continue monitoring the queue
+            return 0.1  # Keep checking the queue every 0.1 seconds
+
+    def cleanup_docker_container(self, container_name):
+        """Ensure any lingering Docker containers are cleaned up."""
+        try:
+            # Check if the container exists
+            self.report_queue.put(('INFO', f"Checking for lingering Docker container '{container_name}'..."))
+            inspect_result = subprocess.run(["docker", "container", "inspect", container_name], capture_output=True)
+
+            if inspect_result.returncode == 0:  # Container exists
+                self.report_queue.put(('INFO', f"Cleaning up Docker container '{container_name}'..."))
+                subprocess.run(["docker", "container", "rm", "-f", container_name], check=True)
+                self.report_queue.put(('INFO', f"Docker container '{container_name}' removed successfully."))
+            else:
+                self.report_queue.put(('INFO', f"No lingering Docker container '{container_name}' found."))
+
+        except Exception as e:
+            self.report_queue.put(('ERROR', f"Failed to clean up Docker container '{container_name}': {e}"))
 
     def show_popup(self, message, title, icon):
         """Helper function to display a popup message box"""
@@ -241,22 +265,22 @@ class RenderPolyFemAnimationOperator(Operator):
     def run_animation_process(self, context):
         """Background thread method to handle the animation rendering process."""
         polyfem_settings = context.scene.polyfem_settings
-        project_path = bpy.path.abspath(polyfem_settings.project_path)
+        export_path = bpy.path.abspath(polyfem_settings.export_path)
         start_frame = 0
         frame_interval = 1
         scale_factor = 1
 
-        if not os.path.exists(project_path):
-            self.report_queue.put(('ERROR', f"Project directory '{project_path}' does not exist."))
+        if not os.path.exists(export_path):
+            self.report_queue.put(('ERROR', f"Project directory '{export_path}' does not exist."))
             return
 
         # Define obj_folder
-        obj_folder = os.path.join(project_path, "obj")
+        obj_folder = os.path.join(export_path, "obj")
         os.makedirs(obj_folder, exist_ok=True)
 
         # Step 1: Read and sort VTU files
         try:
-            vtu_files = [f for f in os.listdir(project_path) if f.startswith("step_") and f.endswith(".vtu")]
+            vtu_files = [f for f in os.listdir(export_path) if f.startswith("step_") and f.endswith(".vtu")]
             if not vtu_files:
                 self.report_queue.put(('ERROR', "No VTU files found in the specified directory."))
                 return
@@ -274,7 +298,7 @@ class RenderPolyFemAnimationOperator(Operator):
         index_map = {vtu_file: index for index, vtu_file in enumerate(vtu_files)}
 
         def convert_vtu_wrapper(vtu_file):
-            vtu_path = os.path.join(project_path, vtu_file)
+            vtu_path = os.path.join(export_path, vtu_file)
             obj_filename = f"{os.path.splitext(vtu_file)[0]}.obj"
             obj_path = os.path.join(obj_folder, obj_filename)
 
@@ -534,8 +558,8 @@ class ClearCachePolyFemOperator(Operator):
 
     def execute(self, context):
         polyfem_settings = context.scene.polyfem_settings
-        project_path = bpy.path.abspath(polyfem_settings.project_path)
-        cache_path = os.path.join(project_path, "obj")
+        export_path = bpy.path.abspath(polyfem_settings.export_path)
+        cache_path = os.path.join(export_path, "obj")
         try:
             if not os.path.exists(cache_path):
                 self.report({'WARNING'}, f"Cache directory '{cache_path}' does not exist.")

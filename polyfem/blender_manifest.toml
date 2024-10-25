@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "polyfem"
-version = "1.0.12"
+version = "1.0.13"
 name = "PolyFem"
 tagline = "PolyFEM simulation plugin for Blender"
 maintainer = "Antoine Boucher <antoine@antoineboucher.info>"
