@@ -62,30 +62,21 @@ class RunPolyFemSimulationOperator(Operator):
     bl_description = "Run PolyFem simulation to generate VTU files"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # Queue for thread-safe reporting
     report_queue = queue.Queue()
-
-    # Thread handle
     _thread = None
 
     def execute(self, context):
         polyfem_settings = context.scene.polyfem_settings
         export_path = bpy.path.abspath(polyfem_settings.export_path)
 
-        # Log starting status
-        self.report({'INFO'}, f"Starting PolyFem simulation with export path: '{export_path}'")
-
         if not os.path.exists(export_path):
             self.report({'ERROR'}, f"Project directory '{export_path}' does not exist.")
             return {'CANCELLED'}
 
-        # Prevent multiple instances
         if RunPolyFemSimulationOperator._thread and RunPolyFemSimulationOperator._thread.is_alive():
             self.report({'WARNING'}, "PolyFem simulation is already running.")
             return {'CANCELLED'}
 
-        # Start the background thread
-        self.report({'INFO'}, "Initializing background thread for PolyFem simulation...")
         RunPolyFemSimulationOperator._thread = threading.Thread(
             target=self.run_polyfem_simulation,
             args=(context,),
@@ -93,79 +84,54 @@ class RunPolyFemSimulationOperator(Operator):
         )
         RunPolyFemSimulationOperator._thread.start()
 
-        # Register the timer to process the report queue
         bpy.app.timers.register(self.process_report_queue)
-
-        self.report({'INFO'}, "PolyFem simulation started in the background.")
         return {'FINISHED'}
 
     def run_polyfem_simulation(self, context):
-        """Run the PolyFem simulation using Docker with the provided JSON config"""
-        polyfem_settings = context.scene.polyfem_settings
-        json_input = bpy.path.abspath(polyfem_settings.json_filename)
-        export_path = bpy.path.abspath(polyfem_settings.export_path)
+        settings = context.scene.polyfem_settings
+        json_input = bpy.path.abspath(settings.json_filename)
+        export_path = bpy.path.abspath(settings.export_path)
 
-        self.report_queue.put(('INFO', f"Using JSON configuration: '{json_input}'"))
-        self.report_queue.put(('INFO', f"Export path resolved to: '{export_path}'"))
+        if settings.execution_mode_polyfem == 'DOCKER':
+            self.run_docker_simulation(json_input, export_path)
+        elif settings.execution_mode_polyfem == 'EXECUTABLE':
+            self.run_executable_simulation(json_input, export_path, settings.executable_path_polyfem)
 
-        json_input_path = os.path.join(export_path, os.path.basename(json_input))
-
-        # Check if the JSON input file exists
-        if not os.path.isfile(json_input_path):
-            self.report_queue.put(('ERROR', f"PolyFem JSON input file '{json_input}' not found."))
-            return
-
-        self.report_queue.put(('INFO', "Validating paths and Docker setup..."))
-
-        # Adjust paths for Docker on Windows
-        if platform.system() == 'Windows':
-            export_path = export_path.replace('\\', '/')
-            json_input_path = json_input_path.replace('\\', '/')
-            if ':' in export_path:
-                drive, rest = export_path.split(':', 1)
-                export_path = f'/{drive.lower()}{rest}'
-            if ':' in json_input_path:
-                drive, rest = json_input_path.split(':', 1)
-                json_input_path = f'/{drive.lower()}{rest}'
-
-        self.report_queue.put(('INFO', f"Adjusted Docker paths for platform '{platform.system()}': export_path='{export_path}', json_input_path='{json_input_path}'"))
-
-        # Docker command setup with a named container for tracking
+    def run_docker_simulation(self, json_input, export_path):
         container_name = "polyfem_simulation"
         command = [
             'docker', 'run', '--rm', '--name', container_name,
-            '-v', f'{export_path}:/data',  # Mount project path as /data in the container
-            'antoinebou12/polyfem',  # Docker image
-            '--json', f'/data/{os.path.basename(json_input_path)}'  # Use the JSON file in the container
+            '-v', f'{export_path}:/data',
+            'antoinebou12/polyfem',
+            '--json', f'/data/{os.path.basename(json_input)}'
         ]
+        self.execute_command(command)
 
-        self.report_queue.put(('INFO', f"Docker command built: {' '.join(command)}"))
+    def run_executable_simulation(self, json_input, export_path, executable_path):
+        if not os.path.isfile(executable_path):
+            self.report_queue.put(('ERROR', f"Executable not found at path: {executable_path}"))
+            return
 
-        # Try to run the PolyFem simulation using Docker
+        command = [executable_path, '--json', json_input, '--output', export_path]
+        self.execute_command(command)
+
+    def execute_command(self, command):
         try:
-            self.report_queue.put(('INFO', "Starting Docker container for PolyFem simulation..."))
             result = subprocess.run(command, capture_output=True, text=True, check=True)
-
-            # Capture the output
-            self.report_queue.put(('INFO', f"Docker Output:\n{result.stdout}"))
+            self.report_queue.put(('INFO', f"Command Output:\n{result.stdout}"))
             if result.stderr:
-                self.report_queue.put(('WARNING', f"Docker Warnings:\n{result.stderr}"))
-
+                self.report_queue.put(('WARNING', f"Warnings:\n{result.stderr}"))
             self.report_queue.put(('INFO', "PolyFem simulation completed successfully."))
         except subprocess.CalledProcessError as e:
-            self.report_queue.put(('ERROR', f"Docker simulation failed with error:\n{e.stderr}"))
-            self.cleanup_docker_container(container_name)
+            self.report_queue.put(('ERROR', f"Command failed with error:\n{e.stderr}"))
         except FileNotFoundError:
-            self.report_queue.put(('ERROR', "Docker not found. Please ensure Docker is installed and in your system's PATH."))
-            self.cleanup_docker_container(container_name)
+            self.report_queue.put(('ERROR', "Command not found. Please ensure it is available in the system's PATH."))
         except Exception as e:
-            self.report_queue.put(('ERROR', f"Unexpected error during PolyFem simulation:\n{e}"))
-            self.cleanup_docker_container(container_name)
+            self.report_queue.put(('ERROR', f"Unexpected error:\n{e}"))
 
     def process_report_queue(self):
-        """Process messages from the report queue and display them to the user."""
         output_log = []  # Store all messages to display at the end
-        has_error = False  # Track if any errors occurred
+        has_error = False
 
         while not self.report_queue.empty():
             level, message = self.report_queue.get()
@@ -174,42 +140,19 @@ class RunPolyFemSimulationOperator(Operator):
             output_log.append(message)
             self.report({level}, message)
 
-        # Check if the thread has finished
         if not RunPolyFemSimulationOperator._thread.is_alive():
-            # Display the final output in a popup
             bpy.ops.polyfem.show_message_box(
                 'INVOKE_DEFAULT',
                 message="\n".join(output_log),
                 title="PolyFem Simulation Output" if not has_error else "PolyFem Simulation Errors",
                 icon='ERROR' if has_error else 'INFO'
             )
-            # Unregister the timer once the process is done
             return None
         else:
-            # Continue monitoring the queue
-            return 0.1  # Keep checking the queue every 0.1 seconds
-
-    def cleanup_docker_container(self, container_name):
-        """Ensure any lingering Docker containers are cleaned up."""
-        try:
-            # Check if the container exists
-            self.report_queue.put(('INFO', f"Checking for lingering Docker container '{container_name}'..."))
-            inspect_result = subprocess.run(["docker", "container", "inspect", container_name], capture_output=True)
-
-            if inspect_result.returncode == 0:  # Container exists
-                self.report_queue.put(('INFO', f"Cleaning up Docker container '{container_name}'..."))
-                subprocess.run(["docker", "container", "rm", "-f", container_name], check=True)
-                self.report_queue.put(('INFO', f"Docker container '{container_name}' removed successfully."))
-            else:
-                self.report_queue.put(('INFO', f"No lingering Docker container '{container_name}' found."))
-
-        except Exception as e:
-            self.report_queue.put(('ERROR', f"Failed to clean up Docker container '{container_name}': {e}"))
+            return 0.1
 
     def show_popup(self, message, title, icon):
-        """Helper function to display a popup message box"""
         bpy.ops.polyfem.show_message_box('INVOKE_DEFAULT', message=message, title=title, icon=icon)
-        return None  # To ensure the timer doesn't keep registering the same popup
 
 # ----------------------------
 # Render PolyFem Animation Operator

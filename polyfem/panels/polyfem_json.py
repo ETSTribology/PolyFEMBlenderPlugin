@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import Panel
 
+
 class PolyFEMPanel(Panel):
     """Creates a panel for configuring PolyFEM JSON settings and applying materials to selected objects"""
     bl_label = "PolyFEM"
@@ -12,6 +13,36 @@ class PolyFEMPanel(Panel):
     def draw(self, context):
         layout = self.layout
         settings = context.scene.polyfem_settings
+
+        # PolyFEM Execution Mode
+        box = layout.box()
+        row = box.row()
+        row.prop(settings, "show_polyfem_execution_mode", icon="TRIA_DOWN" if settings.show_polyfem_execution_mode else "TRIA_RIGHT", emboss=False)
+        row.label(text="PolyFEM Execution Mode")
+        if settings.show_polyfem_execution_mode:
+            sub_box = box.box()
+            sub_box.prop(settings, "execution_mode_polyfem", expand=True)
+            if settings.execution_mode_polyfem == 'EXECUTABLE':
+                sub_box.prop(settings, "executable_path_polyfem")
+            if settings.execution_mode_polyfem == 'DOCKER':
+                sub_box.prop(settings, "docker_image_polyfem")
+                pull_image_op = sub_box.operator('polyfem.pull_docker_image', text='Pull Docker Image', icon='FILE_REFRESH')
+                pull_image_op.docker_image = settings.docker_image_polyfem
+
+        # TetWild Execution Mode
+        box = layout.box()
+        row = box.row()
+        row.prop(settings, "show_tetwild_execution_mode", icon="TRIA_DOWN" if settings.show_tetwild_execution_mode else "TRIA_RIGHT", emboss=False)
+        row.label(text="TetWild Execution Mode")
+        if settings.show_tetwild_execution_mode:
+            sub_box = box.box()
+            sub_box.prop(settings, "execution_mode_tetwild", expand=True)
+            if settings.execution_mode_tetwild == 'EXECUTABLE':
+                sub_box.prop(settings, "executable_path_tetwild")
+            if settings.execution_mode_tetwild == 'DOCKER':
+                sub_box.prop(settings, "docker_image_tetwild")
+                pull_image_op = sub_box.operator('polyfem.pull_docker_image', text='Pull Docker Image', icon='FILE_REFRESH')
+                pull_image_op.docker_image = settings.docker_image_tetwild
 
         # Display selected objects and assign materials
         box = layout.box()
@@ -150,7 +181,7 @@ class PolyFEMPanel(Panel):
             sub_box.prop(settings, "solver_nonlinear_x_delta", icon='MOD_SCREW')
             sub_box.prop(settings, "solver_advanced_lump_mass_matrix", icon='MOD_LATTICE')
             sub_box.prop(settings, "solver_contact_friction_convergence_tol", icon='MOD_CLOTH')
-            sub_box.prop(settings, "solver_contact_friction_iterations", icon='FORCE_FIELD')
+            sub_box.prop(settings, "solver_contact_friction_iterations", icon='FORCE_FORCE')
 
         # Output Settings (Collapsible)
         box = layout.box()

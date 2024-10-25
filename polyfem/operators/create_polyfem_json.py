@@ -11,6 +11,81 @@ import concurrent.futures
 from mathutils import Vector
 from bpy.props import StringProperty, BoolProperty, FloatProperty, EnumProperty, IntProperty
 from bpy.types import Operator
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+
+# Operator to pull Docker images
+class PullDockerImages(bpy.types.Operator):
+    bl_idname = "polyfem.pull_docker_image"
+    bl_label = "Pull Docker Image"
+    bl_description = "Pull the selected Docker image"
+
+    docker_image: bpy.props.StringProperty(name="Docker Image", default="")
+
+    def execute(self, context):
+        # Check if Docker is installed
+        if is_docker_installed():
+            if self.docker_image:
+                background_pull_docker_image(self.docker_image)
+                return {'FINISHED'}
+            else:
+                display_message("No Docker image specified.", icon='ERROR')
+                return {'CANCELLED'}
+        else:
+            display_message("Docker is not installed. Please install Docker to proceed.", icon='ERROR')
+            return {'CANCELLED'}
+
+def display_message(message, title="Notification", icon='INFO'):
+    """Schedule a popup message to be shown on the main thread."""
+    def draw(self, context):
+        self.layout.label(text=message)
+
+    # Schedule the popup on the main thread using bpy.app.timers
+    def show_popup():
+        bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
+        return None  # Return None to stop the timer
+
+    # Register a one-time timer to run the popup on the main thread
+    bpy.app.timers.register(show_popup)
+
+def is_docker_installed():
+    """Check if Docker is installed and available on the machine."""
+    try:
+        result = subprocess.run(["docker", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return result.returncode == 0
+    except Exception as e:
+        logger.error(f"Docker not found: {e}")
+        return False
+
+def background_pull_docker_image(docker_image):
+    """Pull a single Docker image in the background with progress updates."""
+    def pull_image():
+        try:
+            bpy.context.window_manager.progress_begin(0, 1)
+            try:
+                logger.info(f"Pulling Docker image '{docker_image}'...")
+                subprocess.run(["docker", "pull", docker_image], check=True)
+                logger.info(f"Pulled Docker image '{docker_image}' successfully.")
+                display_message(f"Successfully pulled Docker image '{docker_image}'", icon='INFO')
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to pull Docker image '{docker_image}': {e}")
+                display_message(f"Failed to pull Docker image '{docker_image}'. Check console for details.", icon='ERROR')
+            bpy.context.window_manager.progress_update(1)
+            bpy.context.window_manager.progress_end()
+        except Exception as e:
+            display_message(f"Error pulling Docker image '{docker_image}': {e}", title="Error", icon='ERROR')
+            logger.error(f"Error during Docker image pull: {e}")
+
+    threading.Thread(target=pull_image, daemon=True).start()
 
 # ----------------------------
 # Popup Message Box Operator
@@ -122,8 +197,10 @@ class CreatePolyFemJSONOperator(Operator):
     def execute(self, context):
         selected_objects = context.selected_objects[:]
         settings = context.scene.polyfem_settings
+
         # Start the background thread for JSON creation and mesh exporting
         threading.Thread(target=self.background_process, args=(selected_objects, context), daemon=True).start()
+
         # Register a timer to process the report queue
         bpy.app.timers.register(self.process_report_queue)
         self.report({'INFO'}, "Started JSON creation and mesh exporting in the background.")
@@ -181,13 +258,13 @@ class CreatePolyFemJSONOperator(Operator):
 
         for obj in selected_objects:
             if obj.type != 'MESH':
-                self.report_queue.put(('WARNING', f"Skipping non-mesh object '{obj.name}'."))
-                continue  # Skip non-mesh objects
+                self.report_queue.put(('WARNING', f"Skipping non-mesh object '{obj.name}'.")) 
+                continue
 
             output_mesh_dir = os.path.join(project_path, "exported_meshes")
             obj_data = self.process_object(obj, current_id, output_mesh_dir, settings, context)
             if obj_data is None:
-                self.report_queue.put(('ERROR', f"Failed to process object '{obj.name}'."))
+                self.report_queue.put(('ERROR', f"Failed to process object '{obj.name}'.")) 
                 continue
 
             geometry_list.append(obj_data)
@@ -217,53 +294,65 @@ class CreatePolyFemJSONOperator(Operator):
         obj_data = {}
         obj_data["volume_selection"] = material_id
 
-        # Export mesh
-        mesh_filename = f"{obj.name}.{settings.export_format.lower()}"
-        mesh_filepath = os.path.join(output_dir, mesh_filename)
-        success = self.export_mesh(obj, mesh_filepath, settings)
+        # Export mesh based on execution mode
+        export_format = settings.export_format.upper()
+
+        if settings.execution_mode_tetwild == 'DOCKER':
+            self.report_queue.put(('INFO', f"Processing {obj.name} using Docker."))
+            success = self.export_mesh_using_docker(obj, output_dir, settings)
+        elif settings.execution_mode_tetwild == 'EXECUTABLE':
+            self.report_queue.put(('INFO', f"Processing {obj.name} using Executable."))
+            success = self.export_mesh_using_executable(obj, output_dir, settings.executable_path_polyfem)
+
         if not success:
             self.report_queue.put(('ERROR', f"Failed to export mesh for object '{obj.name}'"))
             return None
-        obj_data["mesh"] = mesh_filename
 
-        # Add transformation using quaternion
+        obj_data["mesh"] = f"{obj.name}.{export_format.lower()}"
         obj_data["transformation"] = {
             "translation": list(obj.location),
             "rotation": list(obj.rotation_quaternion),
             "scale": list(obj.scale),
         }
 
-        # Determine if object is an obstacle
-        if obj.rigid_body and obj.rigid_body.type == 'PASSIVE':
-            obj_data["is_obstacle"] = True
-
-        # Include point selection if vertices are selected and export_point_selection is True
-        if settings.export_point_selection:
-            point_selection = self.get_point_selection(obj, context)
-            if point_selection:
-                obj_data["point_selection"] = point_selection
-
-        # If export format is 'MSH', enqueue TetWild Docker command
-        if settings.export_format.upper() == 'MSH':
-            temp_stl_filepath = os.path.join(os.path.dirname(mesh_filepath), f"{obj.name}_temp.stl")
-            success_stl = self.export_mesh_to_stl(obj, temp_stl_filepath)
-            if not success_stl:
-                self.report_queue.put(('ERROR', f"Failed to export {obj.name} to STL format for TetWild."))
-                return None
-
-            # Define output MSH filepath
-            msh_filepath = mesh_filepath
-
-            # Enqueue TetWild Docker command
-            future = self.docker_executor.submit(
-                self.run_tetwild,
-                temp_stl_filepath,
-                msh_filepath
-            )
-            self.report_queue.put(('INFO', f"Enqueued TetWild processing for '{obj.name}'."))
-            # Optionally, store the future if you need to track it
-
         return obj_data
+
+    def export_mesh_using_docker(self, obj, output_dir, settings):
+        """Use Docker to export the mesh."""
+        try:
+            temp_stl_filepath = os.path.join(output_dir, f"{obj.name}_temp.stl")
+            success_stl = self.export_mesh_to_stl(obj, temp_stl_filepath)
+
+            if success_stl:
+                msh_filepath = os.path.join(output_dir, f"{obj.name}.msh")
+                future = self.docker_executor.submit(
+                    self.run_tetwild, temp_stl_filepath, msh_filepath
+                )
+                return True
+            return False
+        except Exception as e:
+            self.report_queue.put(('ERROR', f"Error using Docker: {e}"))
+            return False
+
+    def export_mesh_using_executable(self, obj, output_dir, executable_path):
+        """Use the PolyFem executable to export the mesh."""
+        if not os.path.isfile(executable_path):
+            self.report_queue.put(('ERROR', f"Executable not found at path: {executable_path}"))
+            return False
+
+        mesh_filepath = os.path.join(output_dir, f"{obj.name}.msh")
+
+        command = [executable_path, '--input', mesh_filepath, '--output', output_dir]
+
+        try:
+            result = subprocess.run(command, check=True, capture_output=True, text=True)
+            self.report_queue.put(('INFO', f"Mesh exported successfully using executable for '{obj.name}'."))
+            return True
+        except subprocess.CalledProcessError as e:
+            self.report_queue.put(('ERROR', f"Error exporting with executable: {e.stderr}"))
+        except Exception as e:
+            self.report_queue.put(('ERROR', f"Unexpected error: {e}"))
+        return False
 
     def export_mesh(self, obj, mesh_filepath, settings):
         """Export the mesh of an object based on the selected format."""
@@ -672,12 +761,10 @@ class CreatePolyFemJSONOperator(Operator):
         """Process messages from the report queue and display them to the user."""
         while not self.report_queue.empty():
             level, message = self.report_queue.get()
-            self.report({'INFO'}, message) if level == 'INFO' else \
-                self.report({'WARNING'}, message) if level == 'WARNING' else \
-                self.report({'ERROR'}, message)
-        return 0.1  # Continue the timer every 0.1 seconds
+            self.report({level}, message)
+        return 0.1
 
     def show_popup(self, message, title, icon):
         """Helper function to display a popup message box"""
         bpy.ops.polyfem.show_message_box('INVOKE_DEFAULT', message=message, title=title, icon=icon)
-        return None  # To ensure the timer doesn't keep registering the same popup
+        return None

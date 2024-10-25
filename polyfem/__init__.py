@@ -26,7 +26,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 REQUIRED_PACKAGES = ["meshio", "trimesh", "tetgen"]
-DOCKER_IMAGES = ["antoinebou12/polyfem:latest", "yixinhu/tetwild:latest"]
 
 def get_modules_path():
     return bpy.utils.user_resource("SCRIPTS", path="modules", create=True)
@@ -79,40 +78,9 @@ def background_install_packages(packages, modules_path):
 
     threading.Thread(target=install_packages, daemon=True).start()
 
-def is_docker_installed():
-    """Check if Docker is installed and available on the machine."""
-    try:
-        result = subprocess.run(["docker", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return result.returncode == 0
-    except Exception as e:
-        logger.error(f"Docker not found: {e}")
-        return False
-
-def background_pull_docker_images():
-    """Pull Docker images in the background with progress updates."""
-    def pull_images():
-        try:
-            bpy.context.window_manager.progress_begin(0, len(DOCKER_IMAGES))
-            for i, image in enumerate(DOCKER_IMAGES):
-                try:
-                    logger.info(f"Pulling Docker image '{image}'...")
-                    subprocess.run(["docker", "pull", image], check=True)
-                    logger.info(f"Pulled Docker image '{image}' successfully.")
-                except subprocess.CalledProcessError as e:
-                    logger.error(f"Failed to pull Docker image '{image}': {e}")
-                    display_message(f"Failed to pull Docker image '{image}'. Check console for details.", icon='ERROR')
-                bpy.context.window_manager.progress_update(i + 1)
-            bpy.context.window_manager.progress_end()
-            display_message("All Docker images pulled successfully.")
-        except Exception as e:
-            display_message(f"Error pulling Docker images: {e}", title="Error", icon='ERROR')
-            logger.error(f"Error during Docker image pull: {e}")
-
-    threading.Thread(target=pull_images, daemon=True).start()
-
 # Import classes from submodules using relative imports
 from .operators.run_polyfem import RunPolyFemSimulationOperator, OpenPolyFemDocsOperator, RenderPolyFemAnimationOperator, ClearCachePolyFemOperator
-from .operators.create_polyfem_json import CreatePolyFemJSONOperator, PolyFEMApplyMaterial, POLYFEM_OT_ShowMessageBox
+from .operators.create_polyfem_json import CreatePolyFemJSONOperator, PolyFEMApplyMaterial, POLYFEM_OT_ShowMessageBox, PullDockerImages
 from .panels.polyfem_json import PolyFEMPanel
 from .properties.physics_export_addon import PhysicsExportAddonPreferences
 from .properties.polyfem import PolyFEMSettings, PolyFEMObjectProperties
@@ -138,7 +106,10 @@ classes = [
     PolyFEMApplyMaterial,
 
     # ShowMessageBox
-    POLYFEM_OT_ShowMessageBox
+    POLYFEM_OT_ShowMessageBox,
+
+    # Add more classes here...
+    PullDockerImages
 ]
 
 def is_class_registered(cls):
@@ -176,12 +147,6 @@ def register():
         # Register PointerProperties
         bpy.types.Scene.polyfem_settings = bpy.props.PointerProperty(type=PolyFEMSettings)
         bpy.types.Object.polyfem_props = bpy.props.PointerProperty(type=PolyFEMObjectProperties)
-
-        # Check if Docker is installed
-        if is_docker_installed():
-            background_pull_docker_images()
-        else:
-            display_message("Docker is not installed. Please install Docker to use PolyFem simulations.", icon='ERROR')
 
         logger.info(f"{bl_info.get('name', 'Addon')} v{bl_info.get('version', '0.0')} registered successfully.")
 

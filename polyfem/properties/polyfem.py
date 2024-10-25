@@ -398,6 +398,52 @@ class PolyFEMSettings(PropertyGroup):
 
     show_output_settings: BoolProperty(name="Show Output Settings", description="Show output settings", default=False)
 
+    execution_mode_tetwild: EnumProperty(
+        name="Execution Mode TetWild",
+        description="Choose between Docker or a local executable for running TetWild",
+        items=[
+            ('DOCKER', "Docker", "Use Docker for running TetWild"),
+            ('EXECUTABLE', "Executable", "Use a local executable for running TetWild")
+        ],
+        default='DOCKER'
+    )
+
+    executable_path_tetwild: StringProperty(
+        name="Executable Path TetWild",
+        description="Path to the TetWild executable",
+        subtype='FILE_PATH'
+    )
+
+    docker_image_tetwild: StringProperty(
+        name="Docker Image TetWild",
+        description="Docker image for running TetWild",
+        default="yixinhu/tetwild:latest"
+    )
+
+    execution_mode_polyfem: EnumProperty(
+        name="Execution Mode PolyFem",
+        description="Choose between Docker or a local executable for running PolyFEM",
+        items=[
+            ('DOCKER', "Docker", "Use Docker for running PolyFEM"),
+            ('EXECUTABLE', "Executable", "Use a local executable for running PolyFEM")
+        ],
+        default='DOCKER'
+    )
+
+    executable_path_polyfem: StringProperty(
+        name="Executable Path PolyFem",
+        description="Path to the PolyFem executable",
+        subtype='FILE_PATH'
+    )
+
+    docker_image_polyfem: StringProperty(
+        name="Docker Image PolyFem",
+        description="Docker image for running PolyFEM",
+        default="antoinebou12/polyfem:cuda-latest"
+    )
+
+    show_polyfem_execution_mode: BoolProperty(name="Show PolyFEM Execution Mode", default=True)
+    show_tetwild_execution_mode: BoolProperty(name="Show TetWild Execution Mode", default=True)
 
 class PolyFEMObjectProperties(bpy.types.PropertyGroup):
     collapse: bpy.props.BoolProperty(default=False)
