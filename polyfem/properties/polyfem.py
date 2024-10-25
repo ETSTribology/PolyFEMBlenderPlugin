@@ -10,41 +10,49 @@ from bpy.types import PropertyGroup
 
 # Material data for the dropdown
 material_items = [
-    ("Steel", "Steel", "Density: 8000.0 kg/m³, Young's Modulus: 200.0 GPa, Poisson: 0.3"),
-    ("Copper", "Copper", "Density: 8940.0 kg/m³, Young's Modulus: 133.0 GPa, Poisson: 0.34"),
-    ("Aluminum", "Aluminum", "Density: 2700.0 kg/m³, Young's Modulus: 69.0 GPa, Poisson: 0.33"),
-    ("Brass", "Brass", "Density: 8500.0 kg/m³, Young's Modulus: 115.0 GPa, Poisson: 0.34"),
-    ("Cadmium", "Cadmium", "Density: 8650.0 kg/m³, Young's Modulus: 64.0 GPa, Poisson: 0.31"),
-    ("Cast_Iron", "Cast Iron", "Density: 7200.0 kg/m³, Young's Modulus: 170.0 GPa, Poisson: 0.25"),
-    ("Chromium", "Chromium", "Density: 7190.0 kg/m³, Young's Modulus: 248.0 GPa, Poisson: 0.31"),
-    ("Glass", "Glass", "Density: 2400.0 kg/m³, Young's Modulus: 60.0 GPa, Poisson: 0.25"),
-    ("Nickel", "Nickel", "Density: 8900.0 kg/m³, Young's Modulus: 170.0 GPa, Poisson: 0.31"),
-    ("Rubber", "Rubber", "Density: 1200.0 kg/m³, Young's Modulus: 0.01 GPa, Poisson: 0.47"),
-    ("Tungsten", "Tungsten", "Density: 19300.0 kg/m³, Young's Modulus: 400.0 GPa, Poisson: 0.28"),
-    ("Zinc", "Zinc", "Density: 7135.0 kg/m³, Young's Modulus: 82.7 GPa, Poisson: 0.25"),
-    ("Lead", "Lead", "Density: 11340.0 kg/m³, Young's Modulus: 16.0 GPa, Poisson: 0.431"),
-    ("Titanium", "Titanium", "Density: 4500.0 kg/m³, Young's Modulus: 105.0 GPa, Poisson: 0.3"),
-    ("Gold", "Gold", "Density: 19300.0 kg/m³, Young's Modulus: 78.0 GPa, Poisson: 0.42"),
-    ("Silver", "Silver", "Density: 10500.0 kg/m³, Young's Modulus: 83.0 GPa, Poisson: 0.37"),
-    ("Aluminum_Bronze", "Aluminum Bronze", "Density: 7700.0 kg/m³, Young's Modulus: 100.0 GPa, Poisson: 0.3"),
-    ("Stainless_Steel_18_8", "Stainless Steel 18-8", "Density: 8000.0 kg/m³, Young's Modulus: 193.0 GPa, Poisson: 0.305"),
-    ("Plexiglass", "Plexiglass", "Density: 1190.0 kg/m³, Young's Modulus: 3.3 GPa, Poisson: 0.37"),
-    ("Wood", "Wood", "Density: 750.0 kg/m³, Young's Modulus: 10.0 GPa, Poisson: 0.35"),
-    ("Concrete", "Concrete", "Density: 2400.0 kg/m³, Young's Modulus: 30.0 GPa, Poisson: 0.17"),
-    ("Teflon", "Teflon", "Density: 2200.0 kg/m³, Young's Modulus: 0.5 GPa, Poisson: 0.47"),
-    ("Leather", "Leather", "Density: 980.0 kg/m³, Young's Modulus: 4.0 GPa, Poisson: 0.35"),
-    ("Graphite", "Graphite", "Density: 2050.0 kg/m³, Young's Modulus: 20.0 GPa, Poisson: 0.2"),
-    ("Magnesium", "Magnesium", "Density: 1740.0 kg/m³, Young's Modulus: 45.0 GPa, Poisson: 0.35"),
-    ("Phosphor_Bronze", "Phosphor Bronze", "Density: 8780.0 kg/m³, Young's Modulus: 110.0 GPa, Poisson: 0.33"),
-    ("Titanium_Alloy", "Titanium Alloy", "Density: 4500.0 kg/m³, Young's Modulus: 112.5 GPa, Poisson: 0.3"),
+    ("Steel", "Steel", "Density: 8000.0 , Young's Modulus: 200.0e9, Poisson: 0.3"),
+    ("Copper", "Copper", "Density: 8940.0 , Young's Modulus: 133.0e9, Poisson: 0.34"),
+    ("Aluminum", "Aluminum", "Density: 2700.0 , Young's Modulus: 69.0e9, Poisson: 0.33"),
+    ("Brass", "Brass", "Density: 8500.0 , Young's Modulus: 115.0e9, Poisson: 0.34"),
+    ("Cadmium", "Cadmium", "Density: 8650.0 , Young's Modulus: 64.0e9, Poisson: 0.31"),
+    ("Cast_Iron", "Cast Iron", "Density: 7200.0 , Young's Modulus: 170.0e9, Poisson: 0.25"),
+    ("Chromium", "Chromium", "Density: 7190.0 , Young's Modulus: 248.0e9, Poisson: 0.31"),
+    ("Glass", "Glass", "Density: 2400.0 , Young's Modulus: 60.0e9, Poisson: 0.25"),
+    ("Nickel", "Nickel", "Density: 8900.0 , Young's Modulus: 170.0e9, Poisson: 0.31"),
+    ("Rubber", "Rubber", "Density: 1200.0 , Young's Modulus: 0.01e9, Poisson: 0.47"),
+    ("Tungsten", "Tungsten", "Density: 19300.0 , Young's Modulus: 400.0e9, Poisson: 0.28"),
+    ("Zinc", "Zinc", "Density: 7135.0 , Young's Modulus: 82.7e9, Poisson: 0.25"),
+    ("Lead", "Lead", "Density: 11340.0 , Young's Modulus: 16.0e9, Poisson: 0.431"),
+    ("Titanium", "Titanium", "Density: 4500.0 , Young's Modulus: 105.0e9, Poisson: 0.3"),
+    ("Gold", "Gold", "Density: 19300.0 , Young's Modulus: 78.0e9, Poisson: 0.42"),
+    ("Silver", "Silver", "Density: 10500.0 , Young's Modulus: 83.0e9, Poisson: 0.37"),
+    ("Aluminum_Bronze", "Aluminum Bronze", "Density: 7700.0 , Young's Modulus: 100.0e9, Poisson: 0.3"),
+    ("Stainless_Steel_18_8", "Stainless Steel 18-8", "Density: 8000.0 , Young's Modulus: 193.0e9, Poisson: 0.305"),
+    ("Plexiglass", "Plexiglass", "Density: 1190.0 , Young's Modulus: 3.3e9, Poisson: 0.37"),
+    ("Wood", "Wood", "Density: 750.0 , Young's Modulus: 10.0e9, Poisson: 0.35"),
+    ("Concrete", "Concrete", "Density: 2400.0 , Young's Modulus: 30.0e9, Poisson: 0.17"),
+    ("Teflon", "Teflon", "Density: 2200.0 , Young's Modulus: 0.5e9, Poisson: 0.47"),
+    ("Leather", "Leather", "Density: 980.0 , Young's Modulus: 4.0e9, Poisson: 0.35"),
+    ("Graphite", "Graphite", "Density: 2050.0 , Young's Modulus: 20.0e9, Poisson: 0.2"),
+    ("Magnesium", "Magnesium", "Density: 1740.0 , Young's Modulus: 45.0e9, Poisson: 0.35"),
+    ("Phosphor_Bronze", "Phosphor Bronze", "Density: 8780.0 , Young's Modulus: 110.0e9, Poisson: 0.33"),
+    ("Titanium_Alloy", "Titanium Alloy", "Density: 4500.0 , Young's Modulus: 112.5e9, Poisson: 0.3"),
+    ("Silicone_Rubber", "Silicone Rubber", "Density: 1100.0 , Young's Modulus: 0.0018e9, Poisson: 0.47"),
+    ("Polyurethane_Foam", "Polyurethane Foam", "Density: 150.0 , Young's Modulus: 0.003e9, Poisson: 0.4"),
+    ("Hydrogel", "Hydrogel", "Density: 1050.0 , Young's Modulus: 0.0001e9, Poisson: 0.45"),
+    ("PDMS", "PDMS (Polydimethylsiloxane)", "Density: 970.0 , Young's Modulus: 0.002e9, Poisson: 0.5"),
+    ("Neoprene_Rubber", "Neoprene Rubber", "Density: 1300.0 , Young's Modulus: 0.01e9, Poisson: 0.48"),
+    ("Polyethylene", "Polyethylene (Low-Density)", "Density: 930.0 , Young's Modulus: 0.3e9, Poisson: 0.42"),
+    ("Nylon", "Nylon", "Density: 1150.0 , Young's Modulus: 2.4e9, Poisson: 0.4"),
+    ("Silicone_Gel", "Silicone Gel", "Density: 1000.0 , Young's Modulus: 0.0002e9, Poisson: 0.48"),
 ]
 
-# Define properties for the addon
+# Define properties for the addon with high precision
 class PolyFEMSettings(PropertyGroup):
     export_path: StringProperty(
         name="Export Path",
         description="Path to export the JSON file",
-        default="//physics_export.json",
+        default="physics_export",
         subtype='FILE_PATH'
     )
     json_filename: StringProperty(
@@ -92,18 +100,21 @@ class PolyFEMSettings(PropertyGroup):
         name="dhat",
         description="Barrier activation distance",
         default=0.001,
+        precision=6,  # Set precision to 6 decimal places
     )
 
     contact_friction_coefficient: FloatProperty(
         name="Friction Coefficient",
         description="Coefficient of friction for contact",
         default=0.0,
+        precision=4,  # Set precision to 4 decimal places
     )
 
     contact_epsv: FloatProperty(
         name="epsv",
         description="Tangent velocity threshold",
         default=0.001,
+        precision=6,  # Set precision to 6 decimal places
     )
 
     # Time Settings
@@ -123,12 +134,14 @@ class PolyFEMSettings(PropertyGroup):
         name="End Time",
         description="Simulation end time",
         default=5.0,
+        precision=3,  # Set precision to 3 decimal places
     )
 
     time_dt: FloatProperty(
         name="Time Step",
         description="Time step size",
         default=0.025,
+        precision=6,  # Set precision to 6 decimal places
     )
 
     # Space Settings
@@ -148,18 +161,21 @@ class PolyFEMSettings(PropertyGroup):
         name="RHS X",
         description="Boundary condition RHS X",
         default=0.0,
+        precision=4,  # Set precision to 4 decimal places
     )
 
     boundary_rhs_y: FloatProperty(
         name="RHS Y",
         description="Boundary condition RHS Y",
         default=9.81,
+        precision=4,  # Set precision to 4 decimal places
     )
 
     boundary_rhs_z: FloatProperty(
         name="RHS Z",
         description="Boundary condition RHS Z",
         default=0.0,
+        precision=4,  # Set precision to 4 decimal places
     )
 
     # Materials Settings
@@ -189,58 +205,80 @@ class PolyFEMSettings(PropertyGroup):
         name="Young's Modulus (E)",
         description="Young's Modulus of the material",
         default=210000.0,
+        precision=6,  # Set precision to 6 decimal places for Young's modulus
     )
 
     materials_nu: FloatProperty(
         name="Poisson's Ratio (nu)",
         description="Poisson's Ratio of the material",
         default=0.3,
+        precision=4,  # Set precision to 4 decimal places
     )
 
     materials_rho: FloatProperty(
         name="Density (rho)",
         description="Density of the material",
         default=1000.0,
+        precision=3,  # Set precision to 3 decimal places for density
     )
 
     def update_material_properties(self):
         """Update the material properties based on the selected material."""
         material_data = {
-            "Steel": (200.0, 0.3, 8000.0),
-            "Copper": (133.0, 0.34, 8940.0),
-            "Aluminum": (69.0, 0.33, 2700.0),
-            "Brass": (115.0, 0.34, 8500.0),
-            "Cadmium": (64.0, 0.31, 8650.0),
-            "Cast_Iron": (170.0, 0.25, 7200.0),
-            "Chromium": (248.0, 0.31, 7190.0),
-            "Glass": (60.0, 0.25, 2400.0),
-            "Nickel": (170.0, 0.31, 8900.0),
-            "Rubber": (0.01, 0.47, 1200.0),
-            "Tungsten": (400.0, 0.28, 19300.0),
-            "Zinc": (82.7, 0.25, 7135.0),
-            "Lead": (16.0, 0.431, 11340.0),
-            "Titanium": (105.0, 0.3, 4500.0),
-            "Gold": (78.0, 0.42, 19300.0),
-            "Silver": (83.0, 0.37, 10500.0),
-            "Aluminum_Bronze": (100.0, 0.3, 7700.0),
-            "Stainless_Steel_18_8": (193.0, 0.305, 8000.0),
-            "Plexiglass": (3.3, 0.37, 1190.0),
-            "Wood": (10.0, 0.35, 750.0),
-            "Concrete": (30.0, 0.17, 2400.0),
-            "Teflon": (0.5, 0.47, 2200.0),
-            "Leather": (4.0, 0.35, 980.0),
-            "Graphite": (20.0, 0.2, 2050.0),
-            "Magnesium": (45.0, 0.35, 1740.0),
-            "Phosphor_Bronze": (110.0, 0.33, 8780.0),
-            "Titanium_Alloy": (112.5, 0.3, 4500.0),
+            "Steel": material_items[0][2],
+            "Copper": material_items[1][2],
+            "Aluminum": material_items[2][2],
+            "Brass": material_items[3][2],
+            "Cadmium": material_items[4][2],
+            "Cast_Iron": material_items[5][2],
+            "Chromium": material_items[6][2],
+            "Glass": material_items[7][2],
+            "Nickel": material_items[8][2],
+            "Rubber": material_items[9][2],
+            "Tungsten": material_items[10][2],
+            "Zinc": material_items[11][2],
+            "Lead": material_items[12][2],
+            "Titanium": material_items[13][2],
+            "Gold": material_items[14][2],
+            "Silver": material_items[15][2],
+            "Aluminum_Bronze": material_items[16][2],
+            "Stainless_Steel_18_8": material_items[17][2],
+            "Plexiglass": material_items[18][2],
+            "Wood": material_items[19][2],
+            "Concrete": material_items[20][2],
+            "Teflon": material_items[21][2],
+            "Leather": material_items[22][2],
+            "Graphite": material_items[23][2],
+            "Magnesium": material_items[24][2],
+            "Phosphor_Bronze": material_items[25][2],
+            "Titanium_Alloy": material_items[26][2],
+            "Silicone_Rubber": material_items[27][2],
+            "Polyurethane_Foam": material_items[28][2],
+            "Hydrogel": material_items[29][2],
+            "PDMS": material_items[30][2],
+            "Neoprene_Rubber": material_items[31][2],
+            "Polyethylene": material_items[32][2],
+            "Nylon": material_items[33][2],
+            "Silicone_Gel": material_items[34][2],
         }
 
         material = self.selected_material
         if material in material_data:
-            E, nu, rho = material_data[material]
-            self.materials_E = E
-            self.materials_nu = nu
-            self.materials_rho = rho
+            try:
+                data_str = material_data[material]
+                import re
+                density_match = re.search(r"Density:\s*([\d\.eE+-]+)", data_str)
+                youngs_match = re.search(r"Young's Modulus:\s*([\d\.eE+-]+)", data_str)
+                poisson_match = re.search(r"Poisson:\s*([\d\.eE+-]+)", data_str)
+
+                if density_match and youngs_match and poisson_match:
+                    self.materials_rho = float(density_match.group(1))
+                    self.materials_E = float(youngs_match.group(1))
+                    self.materials_nu = float(poisson_match.group(1))
+                else:
+                    self.report({'ERROR'}, f"Failed to parse material properties for '{material}'.")
+            except Exception as e:
+                self.report({'ERROR'}, f"Error updating material properties for '{material}': {e}")
 
     # Solver Settings
     solver_linear_solver_items = [
@@ -259,6 +297,7 @@ class PolyFEMSettings(PropertyGroup):
         name="Nonlinear x_delta",
         description="Nonlinear solver x_delta parameter",
         default=1e-05,
+        precision=6,  # Set precision to 6 decimal places
     )
 
     solver_advanced_lump_mass_matrix: BoolProperty(
@@ -271,6 +310,7 @@ class PolyFEMSettings(PropertyGroup):
         name="Friction Convergence Tolerance",
         description="Tolerance for friction convergence",
         default=0.01,
+        precision=4,  # Set precision to 4 decimal places
     )
 
     solver_contact_friction_iterations: IntProperty(
@@ -320,6 +360,7 @@ class PolyFEMSettings(PropertyGroup):
         name="VisMesh Relative Area",
         description="Relative area for visualization mesh",
         default=1e-5,
+        precision=6,  # Set precision to 6 decimal places
     )
 
     output_advanced_save_solve_sequence_debug: BoolProperty(
@@ -339,12 +380,21 @@ class PolyFEMSettings(PropertyGroup):
         description="Path to the JSON file for PolyFem simulation",
         default="",
         subtype='FILE_PATH'
-    ) # type: ignore # noqa: F821
+    )
 
-    # Directory for project (VTU and OBJ files will be inside this directory)
-    project_path: StringProperty(
-        name="Project Path",
-        description="Directory for saving VTU and OBJ files",
-        default="",
-        subtype='DIR_PATH'
-    ) # type: ignore # noqa: F821
+
+    show_export_settings: BoolProperty(name="Show Export Settings", description="Show export settings", default=False)
+
+    show_contact_settings: BoolProperty(name="Show Contact Settings", description="Show contact settings", default=False)
+
+    show_time_settings: BoolProperty(name="Show Time Settings", description="Show time settings", default=False)
+
+    show_space_settings: BoolProperty(name="Show Space Settings", description="Show space settings", default=False)
+
+    show_boundary_conditions: BoolProperty(name="Show Boundary Conditions", description="Show boundary conditions", default=False)
+
+    show_materials: BoolProperty(name="Show Materials", description="Show materials", default=False)
+
+    show_solver_settings: BoolProperty(name="Show Solver Settings", description="Show solver settings", default=False)
+
+    show_output_settings: BoolProperty(name="Show Output Settings", description="Show output settings", default=False)
