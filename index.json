@@ -36,6 +36,35 @@
       "id": "polyfem",
       "name": "PolyFem",
       "tagline": "PolyFEM simulation plugin for Blender",
+      "version": "1.0.14",
+      "type": "add-on",
+      "maintainer": "Antoine Boucher <antoine@antoineboucher.info>",
+      "license": [
+        "MIT"
+      ],
+      "blender_version_min": "4.2.0",
+      "website": "https://github.com/ETSTribology/PolyFEMBlenderPlugin",
+      "permissions": {
+        "files": "Required for reading and writing files during export",
+        "network": "Required for accessing online resources or services"
+      },
+      "tags": [
+        "Object",
+        "Physics",
+        "Import-Export"
+      ],
+      "platforms": [
+        "windows-x64"
+      ],
+      "archive_url": "./polyfem-1.0.14.zip",
+      "archive_size": 23596,
+      "archive_hash": "sha256:2462bfa862fc84d3bb1bb8985c900b442f6c2bf5446f3520d3dc31e72cd54eec"
+    },
+    {
+      "schema_version": "1.0.0",
+      "id": "polyfem",
+      "name": "PolyFem",
+      "tagline": "PolyFEM simulation plugin for Blender",
       "version": "1.0.11",
       "type": "add-on",
       "maintainer": "Antoine Boucher <antoine@antoineboucher.info>",
@@ -59,35 +88,6 @@
       "archive_url": "./polyfem-1.0.11.zip",
       "archive_size": 26919,
       "archive_hash": "sha256:18a85ba6c6193e68edcf2f6fd00d522c40e3731008ae6c8571f44ec41900553c"
-    },
-    {
-      "schema_version": "1.0.0",
-      "id": "polyfem",
-      "name": "PolyFem",
-      "tagline": "PolyFEM simulation plugin for Blender",
-      "version": "1.0.13",
-      "type": "add-on",
-      "maintainer": "Antoine Boucher <antoine@antoineboucher.info>",
-      "license": [
-        "MIT"
-      ],
-      "blender_version_min": "4.2.0",
-      "website": "https://github.com/ETSTribology/PolyFEMBlenderPlugin",
-      "permissions": {
-        "files": "Required for reading and writing files during export",
-        "network": "Required for accessing online resources or services"
-      },
-      "tags": [
-        "Object",
-        "Physics",
-        "Import-Export"
-      ],
-      "platforms": [
-        "windows-x64"
-      ],
-      "archive_url": "./polyfem-1.0.13.zip",
-      "archive_size": 23905,
-      "archive_hash": "sha256:385c388665018a37473f55e9cc8dd042a4decb65b72a5daefad8668688f5e398"
     }
   ]
 }
