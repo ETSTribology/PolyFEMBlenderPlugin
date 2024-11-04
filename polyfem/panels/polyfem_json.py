@@ -49,8 +49,9 @@ class PolyFEMPanel(Panel):
         row = box.row()
         row.label(text="Selected Objects and Materials", icon='OBJECT_DATA')
 
-        if context.selected_objects:
-            for obj in context.selected_objects:
+        # use walrus operator to check if there are selected objects
+        if (selected_objects := [obj for obj in context.selected_objects if obj.type == 'MESH']):
+            for obj in selected_objects:
                 # Access the object's PolyFEM properties
                 polyfem_props = obj.polyfem_props
 
@@ -67,9 +68,12 @@ class PolyFEMPanel(Panel):
                     # Display and allow renaming the object
                     obj_box.prop(obj, "name", text="Rename Object", icon='FONT_DATA')
 
+                    # Button is_obstacle checkbox
+                    obj_box.prop(polyfem_props, "is_obstacle", text="Is Obstacle")
+
                     # Display the object's assigned material and material ID
                     material_id = obj.get("material_id", "No Material")
-                    obj_box.label(text=f"Material ID: {material_id}")
+                    obj_box.label(text=f"Material ID: {material_id}", icon='MATERIAL')
 
                     # Show material properties if they exist
                     if "material_type" in obj.keys():
@@ -82,7 +86,7 @@ class PolyFEMPanel(Panel):
 
                     # Show the actual material assigned to the object
                     if obj.data.materials:
-                        obj_box.label(text=f"Assigned Material: {obj.data.materials[0].name}")
+                        obj_box.label(text=f"Assigned Material: {obj.data.materials[0].name}", icon='MATERIAL')
                     else:
                         obj_box.label(text="No material assigned to the object", icon='ERROR')
 
@@ -95,14 +99,11 @@ class PolyFEMPanel(Panel):
                         sub_box.prop(settings, "tetwild_mesh_quality")
 
                     # Apply material from dropdown to the object
-                    obj_box.prop(context.scene.polyfem_settings, "selected_material", text="Assign Material")
+                    obj_box.prop(context.scene.polyfem_settings, "selected_material", text="Assign Material", icon='MATERIAL')
 
                     # Button to apply the selected material
                     apply_material_btn = obj_box.operator("polyfem.apply_material", text="Apply Material", icon='MATERIAL')
                     apply_material_btn.obj_name = obj.name  # Pass the object name to the operator
-
-                    # Button is_obstacle to apply the selected material
-                    obj_box.prop(obj, "is_obstacle", text="Is Obstacle")
         else:
             box.label(text="No objects selected.", icon='ERROR')
 
@@ -131,9 +132,9 @@ class PolyFEMPanel(Panel):
             sub_box.prop(settings, "contact_enabled", icon='CHECKBOX_HLT')
             sub = sub_box.column(align=True)
             sub.enabled = settings.contact_enabled
-            sub.prop(settings, "contact_dhat")
-            sub.prop(settings, "contact_friction_coefficient")
-            sub.prop(settings, "contact_epsv")
+            sub.prop(settings, "contact_dhat", icon='MOD_PHYSICS')
+            sub.prop(settings, "contact_friction_coefficient", icon='MOD_PHYSICS')
+            sub.prop(settings, "contact_epsv", icon='MOD_PHYSICS')
 
         # Time Settings (Collapsible)
         box = layout.box()

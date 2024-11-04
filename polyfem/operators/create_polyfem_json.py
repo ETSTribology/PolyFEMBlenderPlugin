@@ -195,7 +195,8 @@ class CreatePolyFemJSONOperator(Operator):
     docker_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
     def execute(self, context):
-        selected_objects = context.selected_objects[:]
+        # only meshes can be exported
+        selected_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
         settings = context.scene.polyfem_settings
 
         # Start the background thread for JSON creation and mesh exporting
