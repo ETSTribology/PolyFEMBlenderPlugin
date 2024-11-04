@@ -54,68 +54,56 @@ class PolyFEMSettings(PropertyGroup):
         description="Path to export the JSON file",
         default="physics_export",
         subtype='FILE_PATH'
-    )
+    ) # type: ignore
     json_filename: StringProperty(
         name="JSON Filename",
         description="Name of the JSON file to export",
         default="export.json",
         subtype='NONE'
-    )
+    ) # type: ignore
     export_stl: BoolProperty(
         name="Export Mesh Files",
         description="Export each object as a mesh file",
         default=True
-    )
-    export_format: EnumProperty(
-        name="Export Format",
-        description="Choose the mesh export format",
-        items=[
-            ('STL', "STL (.stl)", "Export as STL"),
-            ('OBJ', "OBJ (.obj)", "Export as OBJ"),
-            ('FBX', "FBX (.fbx)", "Export as FBX"),
-            ('GLTF', "GLTF (.gltf)", "Export as GLTF"),
-            ('MSH', "MSH (.msh)", "Export as MSH using TetWild"),
-        ],
-        default='STL',
-    )
+    ) # type: ignore
     export_selected_only: BoolProperty(
         name="Export Selected Only",
         description="Export only selected objects",
         default=False
-    )
+    ) # type: ignore
     export_point_selection: BoolProperty(
         name="Export Point Selections",
         description="Whether to export selected vertices as point selections",
         default=False
-    )
+    ) # type: ignore
 
     # Contact Settings
     contact_enabled: BoolProperty(
         name="Enable Contact",
         description="Enable contact in the simulation",
         default=True,
-    )
+    ) # type: ignore
 
     contact_dhat: FloatProperty(
         name="dhat",
         description="Barrier activation distance",
         default=0.001,
         precision=6,  # Set precision to 6 decimal places
-    )
+    ) # type: ignore
 
     contact_friction_coefficient: FloatProperty(
         name="Friction Coefficient",
         description="Coefficient of friction for contact",
         default=0.0,
         precision=4,  # Set precision to 4 decimal places
-    )
+    ) # type: ignore
 
     contact_epsv: FloatProperty(
         name="epsv",
         description="Tangent velocity threshold",
         default=0.001,
         precision=6,  # Set precision to 6 decimal places
-    )
+    ) # type: ignore
 
     # Time Settings
     time_integrator_items = [
@@ -128,21 +116,21 @@ class PolyFEMSettings(PropertyGroup):
         description="Time integration method",
         items=time_integrator_items,
         default="ImplicitEuler",
-    )
+    ) # type: ignore
 
     time_tend: FloatProperty(
         name="End Time",
         description="Simulation end time",
         default=5.0,
         precision=3,  # Set precision to 3 decimal places
-    )
+    ) # type: ignore
 
     time_dt: FloatProperty(
         name="Time Step",
         description="Time step size",
         default=0.025,
         precision=6,  # Set precision to 6 decimal places
-    )
+    ) # type: ignore
 
     # Space Settings
     space_bc_method_items = [
@@ -154,7 +142,7 @@ class PolyFEMSettings(PropertyGroup):
         description="Boundary condition method",
         items=space_bc_method_items,
         default="sample",
-    )
+    ) # type: ignore
 
     # Boundary Conditions
     boundary_rhs_x: FloatProperty(
@@ -162,21 +150,21 @@ class PolyFEMSettings(PropertyGroup):
         description="Boundary condition RHS X",
         default=0.0,
         precision=4,  # Set precision to 4 decimal places
-    )
+    ) # type: ignore
 
     boundary_rhs_y: FloatProperty(
         name="RHS Y",
         description="Boundary condition RHS Y",
         default=9.81,
         precision=4,  # Set precision to 4 decimal places
-    )
+    ) # type: ignore
 
     boundary_rhs_z: FloatProperty(
         name="RHS Z",
         description="Boundary condition RHS Z",
         default=0.0,
         precision=4,  # Set precision to 4 decimal places
-    )
+    ) # type: ignore
 
     # Materials Settings
     materials_type_items = [
@@ -189,7 +177,7 @@ class PolyFEMSettings(PropertyGroup):
         description="Type of material model",
         items=materials_type_items,
         default="NeoHookean",
-    )
+    ) # type: ignore
 
     # Material dropdown
     selected_material: EnumProperty(
@@ -198,7 +186,7 @@ class PolyFEMSettings(PropertyGroup):
         items=material_items,
         default="Steel",  # Default to Steel
         update=lambda self, context: self.update_material_properties()  # Automatically update material properties
-    )
+    ) # type: ignore
 
     # Material properties (will be auto-filled based on the selected material)
     materials_E: FloatProperty(
@@ -206,21 +194,21 @@ class PolyFEMSettings(PropertyGroup):
         description="Young's Modulus of the material",
         default=210000.0,
         precision=6,  # Set precision to 6 decimal places for Young's modulus
-    )
+    ) # type: ignore
 
     materials_nu: FloatProperty(
         name="Poisson's Ratio (nu)",
         description="Poisson's Ratio of the material",
         default=0.3,
         precision=4,  # Set precision to 4 decimal places
-    )
+    ) # type: ignore
 
     materials_rho: FloatProperty(
         name="Density (rho)",
         description="Density of the material",
         default=1000.0,
         precision=3,  # Set precision to 3 decimal places for density
-    )
+    ) # type: ignore
 
     def update_material_properties(self):
         """Update the material properties based on the selected material."""
@@ -291,112 +279,112 @@ class PolyFEMSettings(PropertyGroup):
         description="Linear solver for the simulation",
         items=solver_linear_solver_items,
         default="Eigen::PardisoLDLT",
-    )
+    ) # type: ignore
 
     solver_nonlinear_x_delta: FloatProperty(
         name="Nonlinear x_delta",
         description="Nonlinear solver x_delta parameter",
         default=1e-05,
         precision=6,  # Set precision to 6 decimal places
-    )
+    ) # type: ignore
 
     solver_advanced_lump_mass_matrix: BoolProperty(
         name="Lump Mass Matrix",
         description="Use lumped mass matrix",
         default=True,
-    )
+    ) # type: ignore
 
     solver_contact_friction_convergence_tol: FloatProperty(
         name="Friction Convergence Tolerance",
         description="Tolerance for friction convergence",
         default=0.01,
         precision=4,  # Set precision to 4 decimal places
-    )
+    ) # type: ignore
 
     solver_contact_friction_iterations: IntProperty(
         name="Friction Iterations",
         description="Number of friction iterations",
         default=1,
-    )
+    ) # type: ignore
 
     # Output Settings
     output_json: StringProperty(
         name="JSON Output",
         description="Name of the JSON output file",
         default="results.json",
-    )
+    ) # type: ignore
 
     output_paraview_file_name: StringProperty(
         name="ParaView Filename",
         description="Name of the ParaView output file",
         default="result.pvd",
-    )
+    ) # type: ignore
 
     output_paraview_material: BoolProperty(
         name="Export Material",
         description="Export material data to ParaView",
         default=True,
-    )
+    ) # type: ignore
 
     output_paraview_body_ids: BoolProperty(
         name="Export Body IDs",
         description="Export body IDs to ParaView",
         default=True,
-    )
+    ) # type: ignore
 
     output_paraview_tensor_values: BoolProperty(
         name="Export Tensor Values",
         description="Export tensor values to ParaView",
         default=True,
-    )
+    ) # type: ignore
 
     output_paraview_nodes: BoolProperty(
         name="Export Nodes",
         description="Export nodes to ParaView",
         default=True,
-    )
+    ) # type: ignore
 
     output_paraview_vismesh_rel_area: FloatProperty(
         name="VisMesh Relative Area",
         description="Relative area for visualization mesh",
         default=1e-5,
         precision=6,  # Set precision to 6 decimal places
-    )
+    ) # type: ignore
 
     output_advanced_save_solve_sequence_debug: BoolProperty(
         name="Save Solve Sequence Debug",
         description="Save debug information for solve sequence",
         default=False,
-    )
+    ) # type: ignore
 
     output_advanced_save_time_sequence: BoolProperty(
         name="Save Time Sequence",
         description="Save time sequence data",
         default=False,
-    )
+    ) # type: ignore
 
     polyfem_json_input: StringProperty(
         name="PolyFem JSON File",
         description="Path to the JSON file for PolyFem simulation",
         default="",
         subtype='FILE_PATH'
-    )
+    ) # type: ignore
 
-    show_export_settings: BoolProperty(name="Show Export Settings", description="Show export settings", default=False)
+    show_export_settings: BoolProperty(name="Show Export Settings", description="Show export settings", default=False) # type: ignore
 
-    show_contact_settings: BoolProperty(name="Show Contact Settings", description="Show contact settings", default=False)
+    show_contact_settings: BoolProperty(name="Show Contact Settings", description="Show contact settings", default=False) # type: ignore
 
-    show_time_settings: BoolProperty(name="Show Time Settings", description="Show time settings", default=False)
+    show_time_settings: BoolProperty(name="Show Time Settings", description="Show time settings", default=False) # type: ignore
 
-    show_space_settings: BoolProperty(name="Show Space Settings", description="Show space settings", default=False)
+    show_space_settings: BoolProperty(name="Show Space Settings", description="Show space settings", default=False) # type: ignore
 
-    show_boundary_conditions: BoolProperty(name="Show Boundary Conditions", description="Show boundary conditions", default=False)
+    show_boundary_conditions: BoolProperty(name="Show Boundary Conditions", description="Show boundary conditions", default=False) # type: ignore
 
-    show_materials: BoolProperty(name="Show Materials", description="Show materials", default=False)
+    show_materials: BoolProperty(name="Show Materials", description="Show materials", default=False) # type: ignore
 
-    show_solver_settings: BoolProperty(name="Show Solver Settings", description="Show solver settings", default=False)
+    show_solver_settings: BoolProperty(name="Show Solver Settings", description="Show solver settings", default=False) # type: ignore
 
-    show_output_settings: BoolProperty(name="Show Output Settings", description="Show output settings", default=False)
+    show_output_settings: BoolProperty(name="Show Output Settings", description="Show output settings", default=False) # type: ignore
 
     execution_mode_tetwild: EnumProperty(
         name="Execution Mode TetWild",
@@ -406,19 +394,19 @@ class PolyFEMSettings(PropertyGroup):
             ('EXECUTABLE', "Executable", "Use a local executable for running TetWild")
         ],
         default='DOCKER'
-    )
+    ) # type: ignore
 
     executable_path_tetwild: StringProperty(
         name="Executable Path TetWild",
         description="Path to the TetWild executable",
         subtype='FILE_PATH'
-    )
+    ) # type: ignore
 
     docker_image_tetwild: StringProperty(
         name="Docker Image TetWild",
         description="Docker image for running TetWild",
         default="yixinhu/tetwild:latest"
-    )
+    ) # type: ignore
 
     execution_mode_polyfem: EnumProperty(
         name="Execution Mode PolyFem",
@@ -428,22 +416,71 @@ class PolyFEMSettings(PropertyGroup):
             ('EXECUTABLE', "Executable", "Use a local executable for running PolyFEM")
         ],
         default='DOCKER'
-    )
+    ) # type: ignore
 
     executable_path_polyfem: StringProperty(
         name="Executable Path PolyFem",
         description="Path to the PolyFem executable",
         subtype='FILE_PATH'
-    )
+    ) # type: ignore
 
     docker_image_polyfem: StringProperty(
         name="Docker Image PolyFem",
         description="Docker image for running PolyFEM",
         default="antoinebou12/polyfem:cuda-latest"
-    )
+    ) # type: ignore
 
-    show_polyfem_execution_mode: BoolProperty(name="Show PolyFEM Execution Mode", default=True)
-    show_tetwild_execution_mode: BoolProperty(name="Show TetWild Execution Mode", default=True)
+    show_polyfem_execution_mode: BoolProperty(name="Show PolyFEM Execution Mode", default=True) # type: ignore
+    show_tetwild_execution_mode: BoolProperty(name="Show TetWild Execution Mode", default=True) # type: ignore
+
+
+     # TetWild Parameters
+    tetwild_max_tets: IntProperty(
+        name="Max Tetrahedrons",
+        description="Maximum number of tetrahedrons in the mesh",
+        default=100000,
+        min=1000,
+        max=1000000,
+    )  # type: ignore
+
+    tetwild_min_tets: IntProperty(
+        name="Min Tetrahedrons",
+        description="Minimum number of tetrahedrons in the mesh",
+        default=10000,
+        min=1000,
+        max=1000000,
+    )  # type: ignore
+
+    tetwild_mesh_quality: FloatProperty(
+        name="Mesh Quality",
+        description="Quality threshold for mesh generation",
+        default=0.9,
+        min=0.1,
+        max=1.0,
+        precision=3,
+    )  # type: ignore
+
+    docker_image: bpy.props.StringProperty(name="Docker Image", default="yixinhu/tetwild") # type: ignore
 
 class PolyFEMObjectProperties(bpy.types.PropertyGroup):
-    collapse: bpy.props.BoolProperty(default=False)
+    collapse: BoolProperty(
+        name="Collapse",
+        default=False
+    )  # type: ignore
+
+    export_type: EnumProperty(
+        name="Export Format",
+        description="Choose the mesh export format",
+        items=[
+            ('STL', "STL (.stl)", "Export as STL"),
+            ('OBJ', "OBJ (.obj)", "Export as OBJ"),
+            ('FBX', "FBX (.fbx)", "Export as FBX"),
+            ('GLTF', "GLTF (.gltf)", "Export as GLTF"),
+            ('MSH', "MSH (.msh)", "Export as MSH using TetWild"),
+        ],
+        default='STL',
+    ) # type: ignore
+    is_obstacle: BoolProperty(
+        name="Obstacle",
+        default=False
+    )  # type: ignore

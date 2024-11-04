@@ -86,12 +86,23 @@ class PolyFEMPanel(Panel):
                     else:
                         obj_box.label(text="No material assigned to the object", icon='ERROR')
 
+                     # Per-Object Export Type Selection
+                    obj_box.prop(polyfem_props, "export_type", text="Export Type")
+                    if settings.execution_mode_tetwild == 'DOCKER' and polyfem_props.export_type == 'MSH':
+                        sub_box.label(text="TetWild Parameters:", icon='MOD_PHYSICS')
+                        sub_box.prop(settings, "tetwild_max_tets")
+                        sub_box.prop(settings, "tetwild_min_tets")
+                        sub_box.prop(settings, "tetwild_mesh_quality")
+
                     # Apply material from dropdown to the object
                     obj_box.prop(context.scene.polyfem_settings, "selected_material", text="Assign Material")
 
                     # Button to apply the selected material
                     apply_material_btn = obj_box.operator("polyfem.apply_material", text="Apply Material", icon='MATERIAL')
                     apply_material_btn.obj_name = obj.name  # Pass the object name to the operator
+
+                    # Button is_obstacle to apply the selected material
+                    obj_box.prop(obj, "is_obstacle", text="Is Obstacle")
         else:
             box.label(text="No objects selected.", icon='ERROR')
 
@@ -104,7 +115,6 @@ class PolyFEMPanel(Panel):
             sub_box = box.box()
             sub_box.prop(settings, 'export_path')
             sub_box.prop(settings, 'json_filename')
-            sub_box.prop(settings, 'export_format', icon='FILE')
             sub_box.prop(settings, 'export_stl', icon='MESH_CUBE')
             sub_box.prop(settings, 'export_selected_only', icon='RESTRICT_SELECT_OFF')
             sub_box.prop(settings, 'export_point_selection', icon='VERTEXSEL')

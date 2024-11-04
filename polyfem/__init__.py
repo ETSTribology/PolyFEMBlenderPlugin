@@ -7,7 +7,7 @@ import threading
 bl_info = {
     "name": "PolyFem",
     "author": "Antoine Boucher",
-    "version": (1, 0, 12),
+    "version": (1, 0, 14),
     "blender": (4, 2, 0),
     "location": "View3D > Sidebar > Physics",
     "description": "PolyFEM simulation plugin for Blender",
@@ -130,7 +130,7 @@ def register():
     bl_info = {
         "name": "PolyFem",
         "author": "Antoine Boucher",
-        "version": (1, 0, 13),
+        "version": (1, 0, 14),
         "blender": (4, 2, 0),
         "location": "View3D > Sidebar > Physics",
         "description": "PolyFEM simulation plugin for Blender",
@@ -162,7 +162,7 @@ def unregister():
         bl_info = {
             "name": "PolyFem",
             "author": "Antoine Boucher",
-            "version": (1, 0, 13),
+            "version": (1, 0, 14),
             "blender": (4, 2, 0),
             "location": "View3D > Sidebar > Physics",
             "description": "PolyFEM simulation plugin for Blender",

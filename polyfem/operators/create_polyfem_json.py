@@ -29,7 +29,7 @@ class PullDockerImages(bpy.types.Operator):
     bl_label = "Pull Docker Image"
     bl_description = "Pull the selected Docker image"
 
-    docker_image: bpy.props.StringProperty(name="Docker Image", default="")
+    docker_image: bpy.props.StringProperty(name="Docker Image", default="yixinhu/tetwild") # type: ignore
 
     def execute(self, context):
         # Check if Docker is installed
@@ -96,8 +96,8 @@ class POLYFEM_OT_ShowMessageBox(Operator):
     bl_label = "PolyFem Notification"
     bl_options = {'REGISTER'}
 
-    message: StringProperty(name="Message")
-    title: StringProperty(name="Title", default="PolyFem Notification")
+    message: StringProperty(name="Message") # type: ignore
+    title: StringProperty(name="Title", default="PolyFem Notification") # type: ignore
     icon: EnumProperty(
         name="Icon",
         items=[
@@ -107,7 +107,7 @@ class POLYFEM_OT_ShowMessageBox(Operator):
             ('NONE', "None", "No Icon"),
         ],
         default='INFO'
-    )
+    ) # type: ignore
 
     def execute(self, context):
         return {'FINISHED'}
@@ -126,7 +126,7 @@ class PolyFEMApplyMaterial(Operator):
     bl_idname = "polyfem.apply_material"
     bl_label = "Apply PolyFem Material"
 
-    obj_name: bpy.props.StringProperty()
+    obj_name: bpy.props.StringProperty() # type: ignore
 
     def execute(self, context):
         obj = bpy.data.objects.get(self.obj_name)
@@ -293,22 +293,31 @@ class CreatePolyFemJSONOperator(Operator):
         """Process an individual object and collect its data."""
         obj_data = {}
         obj_data["volume_selection"] = material_id
+        obj_data["is_obstacle"] = obj.polyfem_props.is_obstacle
 
-        # Export mesh based on execution mode
-        export_format = settings.export_format.upper()
+        # Retrieve the export type from the object's properties
+        export_type = obj.polyfem_props.export_type
 
-        if settings.execution_mode_tetwild == 'DOCKER':
-            self.report_queue.put(('INFO', f"Processing {obj.name} using Docker."))
-            success = self.export_mesh_using_docker(obj, output_dir, settings)
-        elif settings.execution_mode_tetwild == 'EXECUTABLE':
-            self.report_queue.put(('INFO', f"Processing {obj.name} using Executable."))
-            success = self.export_mesh_using_executable(obj, output_dir, settings.executable_path_polyfem)
-
-        if not success:
-            self.report_queue.put(('ERROR', f"Failed to export mesh for object '{obj.name}'"))
+        # Export mesh based on execution mode and export type
+        if export_type == 'STL':
+            self.report_queue.put(('INFO', f"Exporting {obj.name} as STL."))
+            export_success = self.export_mesh(obj, os.path.join(output_dir, f"{obj.name}.stl"), settings, export_format='STL')
+            if not export_success:
+                self.report_queue.put(('ERROR', f"Failed to export STL for object '{obj.name}'"))
+                return None
+            obj_data["mesh"] = f"{obj.name}.stl"
+        elif export_type == 'MSH':
+            self.report_queue.put(('INFO', f"Exporting {obj.name} as MSH using TetWild."))
+            # Use the TetWild execution mode and parameters
+            success = self.export_mesh_using_tetwild(obj, output_dir, settings)
+            if not success:
+                self.report_queue.put(('ERROR', f"Failed to export MSH for object '{obj.name}'"))
+                return None
+            obj_data["mesh"] = f"{obj.name}.msh"
+        else:
+            self.report_queue.put(('ERROR', f"Unsupported export type '{export_type}' for object '{obj.name}'"))
             return None
 
-        obj_data["mesh"] = f"{obj.name}.{export_format.lower()}"
         obj_data["transformation"] = {
             "translation": list(obj.location),
             "rotation": list(obj.rotation_quaternion),
@@ -316,6 +325,27 @@ class CreatePolyFemJSONOperator(Operator):
         }
 
         return obj_data
+    
+    def export_mesh_using_tetwild(self, obj, output_dir, settings):
+        """Use TetWild to export the mesh as MSH."""
+        try:
+            # Export mesh to STL first
+            temp_stl_filepath = os.path.join(output_dir, f"{obj.name}_temp.stl")
+            success_stl = self.export_mesh_to_stl(obj, temp_stl_filepath)
+
+            if success_stl:
+                msh_filepath = os.path.join(output_dir, f"{obj.name}.msh")
+                if settings.execution_mode_tetwild == 'DOCKER':
+                    self.report_queue.put(('INFO', f"Processing {obj.name} using Docker."))
+                    success = self.export_mesh_using_docker(obj, output_dir, settings)
+                elif settings.execution_mode_tetwild == 'EXECUTABLE':
+                    self.report_queue.put(('INFO', f"Processing {obj.name} using Executable."))
+                    success = self.export_mesh_using_executable(obj, output_dir, settings.executable_path_polyfem)
+                return True
+            return False
+        except Exception as e:
+            self.report_queue.put(('ERROR', f"Error using TetWild: {e}"))
+            return False
 
     def export_mesh_using_docker(self, obj, output_dir, settings):
         """Use Docker to export the mesh."""
@@ -353,48 +383,6 @@ class CreatePolyFemJSONOperator(Operator):
         except Exception as e:
             self.report_queue.put(('ERROR', f"Unexpected error: {e}"))
         return False
-
-    def export_mesh(self, obj, mesh_filepath, settings):
-        """Export the mesh of an object based on the selected format."""
-        try:
-            bpy.ops.object.mode_set(mode='OBJECT')
-        except RuntimeError:
-            self.report_queue.put(('WARNING', "Could not set mode to OBJECT. Proceeding anyway."))
-
-        # Deselect all objects
-        bpy.ops.object.select_all(action='DESELECT')
-        obj.select_set(True)
-        bpy.context.view_layer.objects.active = obj
-
-        export_format = settings.export_format.upper()
-
-        try:
-            if export_format == 'STL':
-                self.export_mesh_to_stl(obj, mesh_filepath)
-            elif export_format == 'OBJ':
-                self.export_mesh_to_obj(obj, mesh_filepath)
-            elif export_format == 'FBX':
-                self.report_queue.put(('ERROR', "FBX export is not supported without the FBX addon."))
-                return False
-            elif export_format == 'GLTF':
-                self.report_queue.put(('ERROR', "GLTF export is not supported without the GLTF addon."))
-                return False
-            elif export_format == 'MSH':
-                # Export to STL format for TetWild
-                temp_stl_filepath = os.path.join(os.path.dirname(mesh_filepath), f"{obj.name}_temp.stl")
-                success = self.export_mesh_to_stl(obj, temp_stl_filepath)
-                if not success:
-                    self.report_queue.put(('ERROR', f"Failed to export {obj.name} to STL format for TetWild."))
-                    return False
-                # The TetWild processing is handled asynchronously
-            else:
-                self.report_queue.put(('ERROR', f"Unsupported export format: {export_format}"))
-                return False
-        except Exception as e:
-            self.report_queue.put(('ERROR', f"Error exporting {obj.name}: {e}"))
-            return False
-
-        return True
 
     def export_mesh_to_stl(self, obj, filepath):
         """Exports the mesh data of an object to an STL file."""
@@ -456,36 +444,40 @@ class CreatePolyFemJSONOperator(Operator):
             self.report_queue.put(('ERROR', f"Failed to export OBJ for '{obj.name}': {e}"))
             return False
 
-    def run_tetwild(self, input_file, output_file, ideal_edge_length=0.05, epsilon=1e-3, filter_energy=10, max_pass=80):
-        """Run TetWild via Docker to generate an MSH file from a mesh."""
+    def run_tetwild(self, input_file, output_file):
+        """Run TetWild via Docker to generate an MSH file from a mesh with enhanced parameters."""
         try:
+            settings = bpy.context.scene.polyfem_settings
+            ideal_edge_length = settings.tetwild_max_tets / 100000.0  # Example scaling
+            epsilon = settings.tetwild_min_tets / 100000.0
+            filter_energy = settings.tetwild_mesh_quality * 100
+            max_pass = 80  # Existing parameter
+
             # Get the absolute path of the input and output directories
             input_dir = os.path.abspath(os.path.dirname(input_file))
             output_dir = os.path.abspath(os.path.dirname(output_file))
 
-            # Check the platform and adjust paths for Windows
+            # Adjust paths for Windows if necessary
             if platform.system() == 'Windows':
-                # Convert Windows paths to a format Docker can understand (Unix-style paths)
                 input_dir = input_dir.replace('\\', '/')
                 output_dir = output_dir.replace('\\', '/')
-                # Docker on Windows typically uses paths like `/c/Users/...` instead of `C:/Users/...`
-                if input_dir[1] == ':':  # Detects drive letter, e.g., C:
+                if input_dir[1] == ':':
                     input_dir = f'/{input_dir[0].lower()}{input_dir[2:]}'
-                if output_dir[1] == ':':  # Detects drive letter, e.g., C:
+                if output_dir[1] == ':':
                     output_dir = f'/{output_dir[0].lower()}{output_dir[2:]}'
 
-            # Build the command list with the required parameters
+            # Build the TetWild Docker command with new parameters
             container_name = f"tetwild_{os.path.basename(input_file)}"
             command = [
                 "docker", "run", "--rm", "--name", container_name,
-                "-v", f"{input_dir}:/data",  # Mount the input directory
-                "yixinhu/tetwild",  # Docker image
-                "--input", f"/data/{os.path.basename(input_file)}",  # Input file path in container
+                "-v", f"{input_dir}:/data",
+                "yixinhu/tetwild:latest",  # Ensure you're using the correct tag
+                "--input", f"/data/{os.path.basename(input_file)}",
                 "--ideal-edge-length", str(ideal_edge_length),
                 "--epsilon", str(epsilon),
                 "--filter-energy", str(filter_energy),
                 "--max-pass", str(max_pass),
-                "--output", f"/data/{os.path.basename(output_file)}"  # Output file
+                "--output", f"/data/{os.path.basename(output_file)}"
             ]
 
             # Execute the command
@@ -558,7 +550,8 @@ class CreatePolyFemJSONOperator(Operator):
                 settings = context.scene.polyfem_settings
                 project_path = bpy.path.abspath(settings.export_path)
                 obj_data = self.process_object(obj, material_id, project_path, settings, context)
-                geometry_list.append(obj_data)
+                if obj_data:
+                    geometry_list.append(obj_data)
 
         # Final JSON structure
         json_data = {
@@ -618,39 +611,6 @@ class CreatePolyFemJSONOperator(Operator):
         }
 
         return json_data
-
-    def extract_physics_properties(self, obj):
-        """Extract physics properties from an object."""
-        physics_properties = {}
-
-        # Soft Body properties
-        for mod in obj.modifiers:
-            if mod.type == 'SOFT_BODY':
-                sb_settings = mod.settings
-                physics_properties['bending_stiffness'] = sb_settings.bending
-                physics_properties['self_collision'] = sb_settings.use_self_collision
-                break  # Assuming only one Soft Body modifier
-
-        # Rigid Body properties
-        if obj.rigid_body:
-            rb = obj.rigid_body
-            physics_properties['mass'] = rb.mass
-            physics_properties['friction'] = rb.friction
-            physics_properties['restitution'] = rb.restitution
-            physics_properties['collision_shape'] = rb.collision_shape
-
-        # Rigid Body Constraint properties
-        if obj.rigid_body_constraint:
-            rbc = obj.rigid_body_constraint
-            physics_properties['constraint'] = {
-                'type': rbc.type,
-                'enabled': rbc.enabled,
-                'collision_disabled': rbc.disable_collisions,
-                'object1': rbc.object1.name if rbc.object1 else None,
-                'object2': rbc.object2.name if rbc.object2 else None,
-            }
-
-        return physics_properties if physics_properties else None
 
     def get_custom_properties(self, obj):
         """Retrieve custom properties from an object."""

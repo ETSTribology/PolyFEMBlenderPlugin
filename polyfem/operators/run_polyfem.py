@@ -24,8 +24,8 @@ class POLYFEM_OT_ShowMessageBox(Operator):
     bl_label = "PolyFem Notification"
     bl_options = {'REGISTER'}
 
-    message: StringProperty(name="Message")
-    title: StringProperty(name="Title", default="PolyFem Notification")
+    message: StringProperty(name="Message") # type: ignore
+    title: StringProperty(name="Title", default="PolyFem Notification") # type: ignore
     icon: EnumProperty(
         name="Icon",
         items=[
@@ -35,7 +35,7 @@ class POLYFEM_OT_ShowMessageBox(Operator):
             ('NONE', "None", "No Icon"),
         ],
         default='INFO'
-    )
+    ) # type: ignore
 
     def execute(self, context):
         return {'FINISHED'}

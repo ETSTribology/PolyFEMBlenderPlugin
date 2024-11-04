@@ -4,13 +4,9 @@ import sys
 import shlex  # Added for safer command construction
 
 packages = {
-    'numpy': '2.1.2',
-    'scipy': '1.14.1',
-    'noise': '1.2.1',
     'meshio': '5.3.5',
     'trimesh': '4.5.0',
     'tetgen': '0.6.5',
-    'rich': '13.9.2',
 }
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
