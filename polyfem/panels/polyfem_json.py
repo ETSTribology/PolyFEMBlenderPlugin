@@ -93,10 +93,10 @@ class PolyFEMPanel(Panel):
                      # Per-Object Export Type Selection
                     obj_box.prop(polyfem_props, "export_type", text="Export Type")
                     if settings.execution_mode_tetwild == 'DOCKER' and polyfem_props.export_type == 'MSH':
-                        sub_box.label(text="TetWild Parameters:", icon='MOD_PHYSICS')
-                        sub_box.prop(settings, "tetwild_max_tets")
-                        sub_box.prop(settings, "tetwild_min_tets")
-                        sub_box.prop(settings, "tetwild_mesh_quality")
+                        obj_box.label(text="TetWild Parameters:", icon='MOD_PHYSICS')
+                        obj_box.prop(settings, "tetwild_max_tets")
+                        obj_box.prop(settings, "tetwild_min_tets")
+                        obj_box.prop(settings, "tetwild_mesh_quality")
 
                     # Apply material from dropdown to the object
                     obj_box.prop(context.scene.polyfem_settings, "selected_material", text="Assign Material", icon='MATERIAL')

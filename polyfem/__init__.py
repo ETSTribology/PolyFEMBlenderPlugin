@@ -25,7 +25,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-REQUIRED_PACKAGES = ["meshio", "trimesh", "tetgen"]
+REQUIRED_PACKAGES = ["meshio"]
 
 def get_modules_path():
     return bpy.utils.user_resource("SCRIPTS", path="modules", create=True)

@@ -438,17 +438,17 @@ class PolyFEMSettings(PropertyGroup):
     tetwild_max_tets: IntProperty(
         name="Max Tetrahedrons",
         description="Maximum number of tetrahedrons in the mesh",
-        default=100000,
-        min=1000,
-        max=1000000,
+        default=4,
+        min=4,
+        max=100,
     )  # type: ignore
 
     tetwild_min_tets: IntProperty(
         name="Min Tetrahedrons",
         description="Minimum number of tetrahedrons in the mesh",
-        default=10000,
-        min=1000,
-        max=1000000,
+        default=80,
+        min=80,
+        max=1000,
     )  # type: ignore
 
     tetwild_mesh_quality: FloatProperty(
