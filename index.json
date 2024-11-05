@@ -57,8 +57,8 @@
         "windows-x64"
       ],
       "archive_url": "./polyfem-1.0.14.zip",
-      "archive_size": 23596,
-      "archive_hash": "sha256:9023da7eccf883a4147a222af14e14977cf21106b3551f2cf523d48255f97665"
+      "archive_size": 23166,
+      "archive_hash": "sha256:46bac91aa9b7014fcd3c36e59353fa4bfa2e5448d4118f78faf92e8dedce43ec"
     },
     {
       "schema_version": "1.0.0",
